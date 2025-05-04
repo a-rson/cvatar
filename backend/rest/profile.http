@@ -23,9 +23,8 @@ Content-Type: application/json
   "spokenLanguages": ["English", "Spanish"],
   "yearsOfExperience": 5,
   "softSkills": ["problem-solving", "communication"],
-  "avatarUrl": "https://example.com/avatar.jpg",
-  "documents": []
+  "avatarUrl": "https://example.com/avatar.jpg"
 }
 
 ### Get candidate profile by ID
-GET http://localhost:3001/profile/7aab1d13-d223-48ad-abd1-1b0c5ac09af7
+GET http://localhost:3001/profile/6d58faba-df9d-427f-9eea-9ac7bcaa61a3
