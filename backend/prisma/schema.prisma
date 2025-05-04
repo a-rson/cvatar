@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model CandidateProfile {
+  id                 String           @id @default(uuid())
+  userId             String
+  firstName          String
+  lastName           String
+  maritalStatus      String?
+  education          String[]
+  spokenLanguages    String[]
+  yearsOfExperience  Int
+  softSkills         String[]
+  avatarUrl          String?
+  createdAt          DateTime         @default(now())
+
+  workExperience     WorkExperience[]
+  techStack          TechStack[]
+  documents          Document[]
+}
+
+model WorkExperience {
+  id                 String   @id @default(uuid())
+  candidateProfileId String
+  position           String
+  company            String
+  years              String
+
+  candidateProfile   CandidateProfile @relation(fields: [candidateProfileId], references: [id])
+}
+
+model TechStack {
+  id                 String   @id @default(uuid())
+  candidateProfileId String
+  category           String   // "language" | "framework" | "tool"
+  name               String
+
+  candidateProfile   CandidateProfile @relation(fields: [candidateProfileId], references: [id])
+}
+
+model Document {
+  id                 String   @id @default(uuid())
+  candidateProfileId String
+  title              String
+  content            String
+  createdAt          DateTime @default(now())
+
+  candidateProfile   CandidateProfile @relation(fields: [candidateProfileId], references: [id])
+}
