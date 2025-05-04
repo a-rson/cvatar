@@ -1,0 +1,31 @@
+### Create candidate profile
+POST http://localhost:3001/profile
+Content-Type: application/json
+
+{
+  "userId": "user-123",
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "maritalStatus": "single",
+  "education": ["MIT", "Harvard"],
+  "workExperience": [
+    {
+      "position": "Backend Developer",
+      "company": "Tech Inc",
+      "years": "2019–2023"
+    }
+  ],
+  "techStack": {
+    "languages": ["TypeScript", "Go"],
+    "frameworks": ["Fastify", "Express"],
+    "tools": ["Docker", "Git"]
+  },
+  "spokenLanguages": ["English", "Spanish"],
+  "yearsOfExperience": 5,
+  "softSkills": ["problem-solving", "communication"],
+  "avatarUrl": "https://example.com/avatar.jpg",
+  "documents": []
+}
+
+### Get candidate profile by ID
+GET http://localhost:3001/profile/7aab1d13-d223-48ad-abd1-1b0c5ac09af7
