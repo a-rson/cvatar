@@ -79,4 +79,26 @@ export async function profileRoutes(server: FastifyInstance) {
 
     reply.send(profile);
   });
+
+  server.delete("/profile/:id", async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    try {
+      const deletedProfile = await prisma.candidateProfile.delete({
+        where: { id },
+      });
+
+      reply.code(200).send({
+        message: "Profile deleted successfully.",
+        profile: deletedProfile,
+      });
+    } catch (error: any) {
+      if (error.code === "P2025") {
+        reply.code(404).send({ error: "Profile not found." });
+      } else {
+        console.error(error);
+        reply.code(500).send({ error: "Internal server error." });
+      }
+    }
+  });
 }

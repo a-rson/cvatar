@@ -28,3 +28,6 @@ Content-Type: application/json
 
 ### Get candidate profile by ID
 GET http://localhost:3001/profile/6d58faba-df9d-427f-9eea-9ac7bcaa61a3
+
+### Delete candidate profile by ID
+DELETE http://localhost:3001/profile/6d58faba-df9d-427f-9eea-9ac7bcaa61a3
