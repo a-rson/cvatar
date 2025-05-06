@@ -1,4 +1,4 @@
-### Create candidate profile
+### @name createProfile
 POST http://localhost:3001/profile
 Content-Type: application/json
 
@@ -26,8 +26,18 @@ Content-Type: application/json
   "avatarUrl": "https://example.com/avatar.jpg"
 }
 
-### Get candidate profile by ID
-GET http://localhost:3001/profile/6d58faba-df9d-427f-9eea-9ac7bcaa61a3
+### @name getProfile
+GET http://localhost:3001/profile/
 
-### Delete candidate profile by ID
-DELETE http://localhost:3001/profile/6d58faba-df9d-427f-9eea-9ac7bcaa61a3
+### @name deleteProfile
+DELETE http://localhost:3001/profile/
+
+### @name createToken
+POST http://localhost:3001/token
+Content-Type: application/json
+
+{
+  "profileId": "",
+  "expiresIn": 3600,
+  "isOneTime": true
+}
