@@ -1,9 +1,11 @@
 import Fastify from "fastify";
+import { userRoutes } from "./routes/user";
 import { profileRoutes } from "./routes/profile";
 import { tokenRoutes } from "./routes/token";
 
 const fastify = Fastify({ logger: true });
 
+fastify.register(userRoutes);
 fastify.register(profileRoutes);
 fastify.register(tokenRoutes);
 
