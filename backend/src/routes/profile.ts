@@ -2,11 +2,12 @@ import { FastifyInstance } from "fastify";
 import { prisma } from "../lib/prisma";
 
 export async function profileRoutes(server: FastifyInstance) {
-  server.post("/profile", async (request, reply) => {
+  server.post("/candidate-profile", async (request, reply) => {
     const {
       userId,
       firstName,
       lastName,
+      description,
       maritalStatus,
       education,
       spokenLanguages,
@@ -17,59 +18,130 @@ export async function profileRoutes(server: FastifyInstance) {
       techStack,
     } = request.body as any;
 
-    const createdProfile = await prisma.candidateProfile.create({
+    const createdProfile = await prisma.profile.create({
       data: {
-        userId,
-        firstName,
-        lastName,
-        maritalStatus,
-        education,
-        spokenLanguages,
-        yearsOfExperience,
-        softSkills,
-        avatarUrl,
-        workExperience: {
-          create: workExperience.map((item: any) => ({
-            position: item.position,
-            company: item.company,
-            years: item.years,
-          })),
+        user: {
+          connect: { id: userId },
         },
-        techStack: {
-          create: [
-            ...techStack.languages.map((name: string) => ({
-              category: "language",
-              name,
-            })),
-            ...techStack.frameworks.map((name: string) => ({
-              category: "framework",
-              name,
-            })),
-            ...techStack.tools.map((name: string) => ({
-              category: "tool",
-              name,
-            })),
-          ],
+        candidate: {
+          create: {
+            firstName,
+            lastName,
+            description,
+            maritalStatus,
+            education,
+            spokenLanguages,
+            yearsOfExperience,
+            softSkills,
+            avatarUrl,
+            workExperience: {
+              create: workExperience.map((item: any) => ({
+                position: item.position,
+                company: item.company,
+                years: item.years,
+              })),
+            },
+            techStack: {
+              create: [
+                ...techStack.languages.map((name: string) => ({
+                  category: "language",
+                  name,
+                })),
+                ...techStack.frameworks.map((name: string) => ({
+                  category: "framework",
+                  name,
+                })),
+                ...techStack.tools.map((name: string) => ({
+                  category: "tool",
+                  name,
+                })),
+              ],
+            },
+          },
         },
       },
       include: {
-        workExperience: true,
-        techStack: true,
+        candidate: {
+          include: {
+            workExperience: true,
+            techStack: true,
+          },
+        },
       },
     });
 
-    reply.send(createdProfile);
+    reply.code(201).send(createdProfile);
+  });
+
+  server.post("/company-profile", async (request, reply) => {
+    const {
+      userId,
+      companyName,
+      description,
+      logoUrl,
+      services,
+      techStack,
+      teamSize,
+      contactEmail,
+      contactPhone,
+    } = request.body as any;
+
+    try {
+      const createdProfile = await prisma.profile.create({
+        data: {
+          user: {
+            connect: { id: userId },
+          },
+          company: {
+            create: {
+              companyName,
+              description,
+              logoUrl,
+              services,
+              techStack: {
+                create: techStack.map((name: string) => ({
+                  category: "tool",
+                  name,
+                })),
+              },
+              teamSize,
+              contactEmail,
+              contactPhone,
+            },
+          },
+        },
+        include: {
+          company: {
+            include: {
+              techStack: true,
+            },
+          },
+        },
+      });
+
+      reply.code(201).send(createdProfile);
+    } catch (error) {
+      console.error("Company profile creation failed:", error);
+      reply.code(500).send({ error: "Failed to create company profile." });
+    }
   });
 
   server.get("/profile/:id", async (request, reply) => {
     const { id } = request.params as { id: string };
 
-    const profile = await prisma.candidateProfile.findUnique({
+    const profile = await prisma.profile.findUnique({
       where: { id },
       include: {
-        workExperience: true,
-        techStack: true,
-        documents: true,
+        candidate: {
+          include: {
+            workExperience: true,
+            techStack: true,
+            documents: true,
+          },
+        },
+        company: true,
+        botPersona: true,
+        tokens: true,
       },
     });
 
@@ -84,7 +156,7 @@ export async function profileRoutes(server: FastifyInstance) {
     const { id } = request.params as { id: string };
 
     try {
-      const deletedProfile = await prisma.candidateProfile.delete({
+      const deletedProfile = await prisma.profile.delete({
         where: { id },
       });
 

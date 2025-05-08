@@ -7,41 +7,77 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model CandidateProfile {
-  id                 String           @id @default(uuid())
-  userId             String
-  firstName          String
-  lastName           String
-  maritalStatus      String?
-  education          String[]
-  spokenLanguages    String[]
-  yearsOfExperience  Int
-  softSkills         String[]
-  avatarUrl          String?
-  createdAt          DateTime         @default(now())
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  profiles  Profile[]
+  createdAt DateTime  @default(now())
+}
 
-  workExperience     WorkExperience[]
-  techStack          TechStack[]
-  documents          Document[]
+model Profile {
+  id        String   @id @default(uuid())
+  userId    String
+  createdAt DateTime @default(now())
+
+  user       User              @relation(fields: [userId], references: [id])
+  candidate  CandidateProfile?
+  company    CompanyProfile?
+  botPersona BotPersona?
+  tokens     Token[]
+}
+
+model CandidateProfile {
+  profileId         String   @id
+  firstName         String
+  lastName          String
+  description       String?
+  maritalStatus     String?
+  avatarUrl         String?
+  education         String[]
+  spokenLanguages   String[]
+  yearsOfExperience Int
+  softSkills        String[]
+
+  profile        Profile          @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  workExperience WorkExperience[]
+  techStack      TechStack[]
+  documents      Document[]
+}
+
+model CompanyProfile {
+  profileId    String      @id
+  companyName  String
+  description  String?
+  logoUrl      String?
+  services     String[]
+  techStack    TechStack[]
+  teamSize     Int
+  contactEmail String
+  contactPhone String?
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 }
 
 model WorkExperience {
-  id                 String   @id @default(uuid())
+  id                 String @id @default(uuid())
   candidateProfileId String
   position           String
   company            String
   years              String
 
-  candidateProfile   CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfile CandidateProfile @relation(fields: [candidateProfileId], references: [profileId], onDelete: Cascade)
 }
 
 model TechStack {
-  id                 String   @id @default(uuid())
-  candidateProfileId String
-  category           String   // "language" | "framework" | "tool"
+  id                 String  @id @default(uuid())
+  candidateProfileId String?
+  companyProfileId   String?
+  category           String
   name               String
 
-  candidateProfile   CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfile CandidateProfile? @relation(fields: [candidateProfileId], references: [profileId], onDelete: Cascade)
+  companyProfile   CompanyProfile?   @relation(fields: [companyProfileId], references: [profileId], onDelete: Cascade)
 }
 
 model Document {
@@ -51,5 +87,37 @@ model Document {
   content            String
   createdAt          DateTime @default(now())
 
-  candidateProfile   CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfile CandidateProfile @relation(fields: [candidateProfileId], references: [profileId], onDelete: Cascade)
+}
+
+model Token {
+  id        String    @id @default(uuid())
+  profileId String
+  token     String    @unique
+  isOneTime Boolean
+  used      Boolean   @default(false)
+  expiresAt DateTime?
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model BotPersona {
+  id          String  @id @default(uuid())
+  profileId   String  @unique
+  style       String? // 'formal', 'casual', etc.
+  language    String? // 'en', 'pl', etc.
+  introPrompt String?
+
+  profile  Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  chatLogs ChatLog[]
+}
+
+model ChatLog {
+  id           String   @id @default(uuid())
+  botPersonaId String
+  message      String
+  sender       String // 'bot' | 'recruiter'
+  timestamp    DateTime @default(now())
+
+  botPersona BotPersona @relation(fields: [botPersonaId], references: [id], onDelete: Cascade)
 }
