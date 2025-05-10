@@ -1,18 +1,17 @@
 import Fastify from "fastify";
-import { userRoutes } from "./routes/user";
-import { profileRoutes } from "./routes/profile";
-import { tokenRoutes } from "./routes/token";
+import { userRoutes, profileRoutes, tokenRoutes, authRoutes } from "./routes";
 
-const fastify = Fastify({ logger: true });
+const server = Fastify({ logger: true });
 
-fastify.register(userRoutes);
-fastify.register(profileRoutes);
-fastify.register(tokenRoutes);
+server.register(userRoutes);
+server.register(profileRoutes);
+server.register(tokenRoutes);
+server.register(authRoutes);
 
-fastify.listen({ port: 3001, host: "0.0.0.0" }, (err, address) => {
+server.listen({ port: 3001, host: "0.0.0.0" }, (err, address) => {
   if (err) {
-    fastify.log.error(err);
+    server.log.error(err);
     process.exit(1);
   }
-  fastify.log.info(`Server listening at ${address}`);
+  server.log.info(`Server listening at ${address}`);
 });

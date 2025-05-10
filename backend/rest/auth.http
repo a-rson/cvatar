@@ -1,0 +1,34 @@
+### 📌 REGISTER user
+POST http://localhost:3001/auth/register
+Content-Type: application/json
+
+{
+  "email": "demo@example.com",
+  "password": "secure123"
+}
+
+### 📌 LOGIN user
+# @name login
+POST http://localhost:3001/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo@example.com",
+  "password": "secure123"
+}
+
+### 📌 GET current user (me)
+GET http://localhost:3001/me
+Authorization: Bearer {{login.response.body.token}}
+
+### 📌 GET current user – no token (should fail)
+GET http://localhost:3001/me
+
+### 📌 LOGIN fail – wrong password
+POST http://localhost:3001/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo@example.com",
+  "password": "wrongpass"
+}
