@@ -1,6 +1,4 @@
-import { userRoutes } from "./user";
-import { profileRoutes } from "./profile";
-import { tokenRoutes } from "./token";
-import { authRoutes } from "./auth";
-
-export { userRoutes, profileRoutes, tokenRoutes, authRoutes };
+export * from "./user";
+export * from "./profile";
+export * from "./token";
+export * from "./auth";
