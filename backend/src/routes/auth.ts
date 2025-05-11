@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import bcrypt from "bcryptjs";
-import { prisma } from "../lib/prisma";
+import { prisma } from "../lib";
 import { config } from "../config";
 import { verifyJWT } from "../middleware";
 import { credentialsSchema } from "../schema";

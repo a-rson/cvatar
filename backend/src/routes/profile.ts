@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { prisma } from "../lib/prisma";
+import { prisma } from "../lib";
 
 export async function profileRoutes(server: FastifyInstance) {
   server.post("/candidate-profile", async (request, reply) => {

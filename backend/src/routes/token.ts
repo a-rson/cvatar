@@ -1,7 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { v4 as uuidv4 } from "uuid";
-import redis from "../lib/redis";
-import { generateQRCodeUrl } from "../lib/qrcode";
+import { redis, generateQRCodeUrl } from "../lib";
 import { config } from "../config";
 
 interface TokenRequest {

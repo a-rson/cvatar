@@ -13,5 +13,5 @@ COPY . .
 # Expose the backend port
 EXPOSE 3001
 
-# Run in dev mode with nodemon
+# Use ts-node-dev to run the backend in dev mode
 CMD ["npm", "run", "dev"]
