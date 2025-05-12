@@ -1,12 +1,3 @@
-### @name createUser
-POST http://localhost:3001/user
-Content-Type: application/json
-
-{
-  "email": "jane@example.com",
-  "password": "supersecurepassword"
-}
-
 ### @name createCandidateProfile
 POST http://localhost:3001/candidate-profile
 Content-Type: application/json

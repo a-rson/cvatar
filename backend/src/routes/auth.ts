@@ -3,16 +3,16 @@ import bcrypt from "bcryptjs";
 import { prisma } from "../lib";
 import { config } from "../config";
 import { verifyJWT } from "../middleware";
-import { credentialsSchema } from "../schema";
+import { registerSchema, loginSchema } from "../schema";
 import { createToken } from "../utils";
 
 export async function authRoutes(server: FastifyInstance) {
   server.post("/auth/register", async (request, reply) => {
-    const validationResult = credentialsSchema.safeParse(request.body);
+    const validationResult = registerSchema.safeParse(request.body);
     if (!validationResult.success) {
       return reply.status(400).send({ error: "Invalid input" });
     }
-    const { email, password } = validationResult.data;
+    const { email, password, type } = validationResult.data;
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser)
@@ -23,7 +23,7 @@ export async function authRoutes(server: FastifyInstance) {
       config.jwtTokenSaltRounds
     );
     const user = await prisma.user.create({
-      data: { email, password: hashedPassword },
+      data: { email, password: hashedPassword, type },
     });
 
     const token = createToken(user);
@@ -31,7 +31,7 @@ export async function authRoutes(server: FastifyInstance) {
   });
 
   server.post("/auth/login", async (request, reply) => {
-    const validationResult = credentialsSchema.safeParse(request.body);
+    const validationResult = loginSchema.safeParse(request.body);
     if (!validationResult.success) {
       return reply.status(400).send({ error: "Invalid input" });
     }

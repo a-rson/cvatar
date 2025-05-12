@@ -5,8 +5,9 @@
     "rootDir": "./src",
     "outDir": "./dist",
     "strict": true,
-    "esModuleInterop": true, 
-    "typeRoots": ["./node_modules/@types", "./src/types"]
+    "esModuleInterop": true,
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "types": ["vitest"]
   },
-  "include": ["src"]
+  "include": ["src", "tests/flows"]
 }

@@ -11,8 +11,13 @@ model User {
   id        String    @id @default(uuid())
   email     String    @unique
   password  String
-  profiles  Profile[]
+  type      String    // "provider" | "client" | "admin"
+  profiles  Profile[] // relevant only if type === "provider"
   createdAt DateTime  @default(now())
+
+  createdTokens Token[]        @relation("TokenCreator")
+  usedTokens    Token[]        @relation("TokenUser")
+  accessLogs    TokenAccessLog[]
 }
 
 model Profile {
@@ -25,6 +30,7 @@ model Profile {
   company    CompanyProfile?
   botPersona BotPersona?
   tokens     Token[]
+  accessLogs TokenAccessLog[]
 }
 
 model CandidateProfile {
@@ -91,14 +97,34 @@ model Document {
 }
 
 model Token {
-  id        String    @id @default(uuid())
-  profileId String
-  token     String    @unique
-  isOneTime Boolean
-  used      Boolean   @default(false)
-  expiresAt DateTime?
+  id            String   @id @default(uuid())
+  token         String   @unique
+  profileId     String
+  createdById   String
+  userId        String?       // optional: client user who received this token
+  type          String        // "one-time" | "user-bound" | "time-limited"
+  used          Boolean  @default(false)
+  expiresAt     DateTime?
+  createdAt     DateTime @default(now())
+  wasStoredInRedis Boolean @default(false)
 
-  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profile       Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  createdBy     User     @relation("TokenCreator", fields: [createdById], references: [id])
+  user          User?    @relation("TokenUser", fields: [userId], references: [id])
+
+  accessLogs    TokenAccessLog[]
+}
+
+model TokenAccessLog {
+  id         String   @id @default(uuid())
+  tokenId    String
+  userId     String?           // null if anonymous
+  profileId  String
+  accessedAt DateTime @default(now())
+
+  token      Token    @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [userId], references: [id])
+  profile    Profile  @relation(fields: [profileId], references: [id])
 }
 
 model BotPersona {

@@ -4,7 +4,8 @@ Content-Type: application/json
 
 {
   "email": "demo@example.com",
-  "password": "secure123"
+  "password": "secure123", 
+  "type": "provider"  // "client" provider" or "admin"
 }
 
 ### 📌 LOGIN user
