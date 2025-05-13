@@ -2,24 +2,24 @@ import request from "supertest";
 import { server } from "../../src/server";
 import { beforeAll, afterAll, describe, it, expect } from "vitest";
 
-let app: any; // actual running HTTP server
+let app: any;
 
 beforeAll(async () => {
-  await server.ready(); // Ensure Fastify is bootstrapped
-  app = server.server; // Access underlying Node.js http.Server
+  await server.ready();
+  app = server.server;
 });
 
 afterAll(async () => {
   await server.close();
 });
 
-describe("Client Flow", () => {
-  it("runs full client access flow", async () => {
-    const email = `client+${Date.now()}@example.com`;
+describe("Provider Flow", () => {
+  it("runs full provider access flow", async () => {
+    const email = `provider+${Date.now()}@example.com`;
     const register = await request(app).post("/auth/register").send({
       email,
       password: "secure123",
-      type: "client",
+      type: "provider",
     });
     expect(register.status).toBe(200);
 
@@ -37,6 +37,6 @@ describe("Client Flow", () => {
       .set("Authorization", `Bearer ${token}`);
     expect(me.status).toBe(200);
     expect(me.body.email).toBe(email);
-    expect(me.body.type).toBe("client");
+    expect(me.body.type).toBe("provider");
   });
 });

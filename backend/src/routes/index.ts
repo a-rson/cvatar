@@ -1,4 +1,4 @@
 export * from "./user";
-export * from "./profile";
+export * from "./candidateProfile";
 export * from "./token";
 export * from "./auth";
