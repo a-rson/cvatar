@@ -1,154 +1,165 @@
-CVATAR — MVP: Status v1.2
+CVATAR — MVP Status v1.3
 Application Goal
 
-To provide an asynchronous tool for simulated recruitment conversations with an AI bot representing a candidate. The bot responds solely based on the candidate's submitted data, with customizable communication style.
+CVATAR is an asynchronous recruitment tool where recruiters can chat with an AI bot representing a candidate. The bot responds exclusively based on structured profile data, with customizable communication style and language. The goal is to simulate realistic, on-demand recruitment conversations without requiring the candidate to be live.
 MVP Scope (Implemented)
+User Accounts & Authorization
 
-1.  Profile System (Candidate & Company)
+    User registration and login (/auth)
 
-    Candidate profile form: personal data, experience, skills, education, languages, description, soft skills, documents.
+    JWT-based authentication
 
-    Company profile form: company name, description, services, tech stack, contact info, logo.
+    Password hashing using bcrypt
 
-    Shared Profile container linked to CandidateProfile or CompanyProfile.
+    Secure endpoints protected by verifyJWT middleware
 
-2.  User Accounts & Authorization
+    Global JWTUserPayload type for consistent request typing
 
-    User registration and login (JWT-based)
+    Role-based access: client, provider, admin
 
-    Password hashing with bcrypt
+Profile System
 
-    Secure endpoints using verifyJWT middleware
+    Candidate Profile:
 
-3.  Tokens & QR Codes
+        Personal information, work experience, education
 
-    Token generation:
+        Tech stack, soft skills, languages, and documents
 
-        One-time or time-limited (UUID)
+    Company Profile:
 
-        Stored in Redis with TTL
+        Company name, description, services, tech stack
 
-    Base64 QR code generation linking to a session
+        Contact information and logo
 
-4.  Bot & Communication Style
+    Shared /profile/:id route for unified access to any profile
 
-    BotPersona:
+    Configurable BotPersona per profile (style, language, intro)
 
-        Communication style (e.g., formal, casual)
+Tokens & Access
 
-        Language (e.g., PL/EN)
+    Token types:
 
-        Custom intro prompt
+        One-time or time-limited (UUID-based)
 
-    Chat logic based only on candidate profile data
+    Tokens stored in Redis with TTL
 
-    Conversation logs (ChatLog): message, sender (bot/recruiter), timestamp
+    Base64 QR code generation for session access
 
-5.  Recruiter Interface (Chat UI)
+    Token usage logs stored in TokenAccessLog
 
-    Entry via token or QR
+    /token endpoint for issuing and validating tokens
 
-    Disclaimer: "You are chatting with CVATAR on behalf of user X"
+Bot & Conversation Logic
 
-    Session expires on token use or after a time period
+    AI prompt built from profile data only (no outside context)
 
-6.  User Dashboard (In Progress)
+    Customizable communication style and language
 
-    Interaction history (who chatted, when, with whom)
+    Recruiter enters through token or QR link
 
-    Option to delete profile and data (GDPR compliant)
+    Disclaimer shown: "You are chatting with CVATAR on behalf of user X"
 
-    Regenerate tokens / QR codes
+    Session ends after one-time token use or time expiry
+
+    Chat messages logged with sender and timestamp in ChatLog
+
+Admin Functionality
+
+    Admin routes (/admin):
+
+        GET /admin/users — list users
+
+        GET /admin/users/:id — fetch specific user
+
+        PUT /admin/users/:id — update user
+
+        DELETE /admin/users/:id — remove user
+
+        GET /admin/logs/token-access — view token access logs
+
+    Protected using requireAdmin middleware
+
+    Deprecated user.ts routes removed
+
+    End-to-end tests for admin flow (admin.flow.test.ts)
+
+Testing
+
+    Flow tests:
+
+        Client (client.flow.test.ts)
+
+        Provider (provider.flow.test.ts)
+
+        Admin (admin.flow.test.ts)
+
+    Docker-based test execution
+
+    Renamed docker-compose.override.yml to avoid auto-usage in normal dev flow
 
 Technical Architecture
-Frontend
+Frontend (Planned / Partial)
 
     React + Vite + TypeScript
 
-    Tailwind CSS + shadcn/ui (Slate theme)
+    Tailwind CSS and shadcn/ui
 
     React Router for navigation
 
-    Role-based UI (Recruiter, Candidate, Company)
+    Role-based UI: Candidate, Company, Recruiter
 
-Backend (Fastify + TypeScript)
+Backend
+
+    Fastify with TypeScript
 
     REST API endpoints:
 
-        /auth (register, login, me)
+        /auth, /candidate-profile, /company-profile
 
-        /candidate-profile, /company-profile
-
-        /profile (unified access)
-
-        /token (QR system)
+        /profile, /token, /admin
 
     Zod for input validation
 
-    Prisma ORM + PostgreSQL
+    Prisma ORM for DB access
 
-    Redis for tokens and session control
+    PostgreSQL as primary data store
 
-    Pino for logging (dev/prod support)
+    Redis for token/session handling
 
-AI (to be integrated)
+    Pino for structured logging
 
-    Prompts dynamically built from profile data
-
-    Configurable communication style and intro
-
-Database (PostgreSQL)
-
-Core models:
+Database Models
 
     User, Profile, CandidateProfile, CompanyProfile
 
     WorkExperience, TechStack, Document
 
-    Token, BotPersona, ChatLog
+    BotPersona, Token, TokenAccessLog, ChatLog
 
 Infrastructure
 
-    Docker Compose (frontend, backend, PostgreSQL, Redis)
+    Docker Compose setup for:
 
-    HTTPS (planned via Nginx or Caddy)
+        Backend, PostgreSQL, Redis
 
-    Environment configs via .env files
+    Config validation via requireEnv helper
 
-    CI/CD (planned)
+    .env for all sensitive config (DB, JWT, Redis, etc.)
 
-MVP Limitations
+    Planned:
 
-    No file upload support (e.g., PDF CV) in UI
+        HTTPS support (via Nginx or Caddy)
 
-    No recruiter login/dashboard (token is sufficient)
-
-    No job-matching or recommendation features
-
-    No mobile app
-
-    No webhooks or ATS API integrations (yet)
+        CI/CD pipeline integration
 
 Next Steps
 
-    Finalize user dashboard and chat UI
+    Complete user dashboard and recruiter chat UI
 
-    Integrate AI prompt generation and OpenAI responses
+    Integrate AI prompt generation and LLM responses
 
-    Improve UX in data entry forms and onboarding motivation
+    Improve data-entry UX and onboarding motivation
 
-    Support for multilingual and stylistic personalization
+    Add multilingual and stylistic personalization
 
-    Add security layers (rate limiting, CORS, etc.)
-
-    Build a simple landing page + onboarding flow
-
-Future Vision
-
-    Feedback loop: most common recruiter questions
-
-    Educate users: “How to program your CVATAR”
-
-    Demo or sandbox mode
-
-    Plugin/API support for ATS platforms
+    Implement basic security: rate limiting, CORS
