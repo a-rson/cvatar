@@ -1,0 +1,60 @@
+### @name createCandidateProfile
+POST http://localhost:3001/candidate-profile
+Content-Type: application/json
+
+{
+  "userId": "",
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "description": "Backend developer focused on APIs",
+  "maritalStatus": "single",
+  "education": ["MIT", "Harvard"],
+  "spokenLanguages": ["English", "Spanish"],
+  "yearsOfExperience": 5,
+  "softSkills": ["problem-solving", "communication"],
+  "avatarUrl": "https://example.com/avatar.jpg",
+  "workExperience": [
+    {
+      "position": "Backend Developer",
+      "company": "Tech Inc",
+      "years": "2019–2023"
+    }
+  ],
+  "techStack": {
+    "languages": ["TypeScript", "Go"],
+    "frameworks": ["Fastify", "Express"],
+    "tools": ["Docker", "Git"]
+  }
+}
+
+### @name createCompanyProfile
+POST http://localhost:3001/company-profile
+Content-Type: application/json
+
+{
+  "userId": "",
+  "companyName": "MLWorks",
+  "description": "AI consulting firm",
+  "logoUrl": "https://example.com/logo.png",
+  "services": ["Machine Learning", "Data Engineering"],
+  "techStack": ["Python", "TensorFlow", "PostgreSQL"],
+  "teamSize": 5,
+  "contactEmail": "contact@mlworks.io",
+  "contactPhone": "+48123456789"
+}
+
+### @name getProfile
+GET http://localhost:3001/profile/
+
+### @name deleteProfile
+DELETE http://localhost:3001/profile/
+
+### @name createToken
+POST http://localhost:3001/token
+Content-Type: application/json
+
+{
+  "profileId": "",
+  "expiresIn": 3600,
+  "isOneTime": true
+}
