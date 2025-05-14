@@ -1,9 +1,10 @@
 import { z } from "zod";
+import { UserType } from "../types/UserType";
 
 export const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  type: z.enum(["provider", "client", "admin"]),
+  type: z.nativeEnum(UserType),
 });
 
 export const loginSchema = z.object({

@@ -5,6 +5,7 @@ import { config } from "../config";
 import { verifyJWT } from "../middleware";
 import { registerSchema, loginSchema } from "../schema";
 import { createToken } from "../utils";
+import { JWTUserPayload } from "../types";
 
 export async function authRoutes(server: FastifyInstance) {
   server.post("/auth/register", async (request, reply) => {
@@ -26,7 +27,7 @@ export async function authRoutes(server: FastifyInstance) {
       data: { email, password: hashedPassword, type },
     });
 
-    const token = createToken(user);
+    const token = createToken(user as JWTUserPayload);
     return { token };
   });
 
@@ -42,7 +43,7 @@ export async function authRoutes(server: FastifyInstance) {
       return reply.status(401).send({ error: "Invalid credentials" });
     }
 
-    const token = createToken(user);
+    const token = createToken(user as JWTUserPayload);
     return { token };
   });
 
@@ -58,6 +59,7 @@ export async function authRoutes(server: FastifyInstance) {
     return {
       id: user.id,
       email: user.email,
+      type: user.type,
       createdAt: user.createdAt,
     };
   });

@@ -1,14 +1,23 @@
 import Fastify from "fastify";
-import { userRoutes, profileRoutes, tokenRoutes, authRoutes } from "./routes";
+import {
+  adminRoutes,
+  authRoutes,
+  profileRoutes,
+  candidateProfileRoutes,
+  companyProfileRoutes,
+  tokenRoutes,
+} from "./routes";
 import { loggerOptions, logger } from "./lib";
 import { config } from "./config";
 
 const server = Fastify({ logger: loggerOptions });
 
-server.register(userRoutes);
-server.register(profileRoutes);
-server.register(tokenRoutes);
+server.register(adminRoutes);
 server.register(authRoutes);
+server.register(tokenRoutes);
+server.register(profileRoutes);
+server.register(candidateProfileRoutes);
+server.register(companyProfileRoutes);
 
 server.addHook("onRequest", async (request) => {
   request.log.info(
