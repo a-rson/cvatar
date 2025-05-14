@@ -24,7 +24,6 @@ export async function companyProfileRoutes(server: FastifyInstance) {
         contactPhone,
       } = request.body as any;
 
-      // Check for existing profile
       const existingProfile = await prisma.profile.findFirst({
         where: { userId: user.id },
         include: {

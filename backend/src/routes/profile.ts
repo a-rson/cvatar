@@ -41,6 +41,10 @@ export async function profileRoutes(server: FastifyInstance) {
         });
 
         if (token && token.profileId === id && !token.used) {
+          const now = new Date();
+          if (token.expiresAt && token.expiresAt < now) {
+            return reply.status(403).send({ error: "Token has expired." });
+          }
           // Optionally: mark token as used if it's one-time
           if (token.type === "one-time") {
             await prisma.token.update({
@@ -49,7 +53,6 @@ export async function profileRoutes(server: FastifyInstance) {
             });
           }
 
-          // Log the access
           await prisma.tokenAccessLog.create({
             data: {
               tokenId: token.id,
@@ -87,12 +90,6 @@ export async function profileRoutes(server: FastifyInstance) {
 
       if (!profile)
         return reply.status(404).send({ error: "Profile not found." });
-
-      if (profile.userId !== user.id && user.type !== "admin") {
-        return reply
-          .status(403)
-          .send({ error: "Forbidden: not your profile." });
-      }
 
       if (profile.userId !== user.id && user.type !== "admin") {
         return reply

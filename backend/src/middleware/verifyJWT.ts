@@ -1,12 +1,6 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { UserType } from "../types/UserType";
+import { JWTUserPayload } from "../types";
 import jwt from "jsonwebtoken";
-
-type JWTUserPayload = {
-  id: string;
-  email: string;
-  type: UserType;
-};
 
 export async function verifyJWT(req: FastifyRequest, reply: FastifyReply) {
   const authHeader = req.headers.authorization;

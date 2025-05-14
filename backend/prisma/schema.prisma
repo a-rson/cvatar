@@ -7,11 +7,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserType {
+  provider
+  client
+  admin
+}
+
 model User {
   id        String    @id @default(uuid())
   email     String    @unique
   password  String
-  type      String    // "provider" | "client" | "admin"
+  type      UserType
   profiles  Profile[] // relevant only if type === "provider"
   createdAt DateTime  @default(now())
 
