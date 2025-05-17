@@ -14,7 +14,15 @@ import cors from "@fastify/cors";
 const server = Fastify({ logger: loggerOptions });
 
 server.register(cors, {
-  origin: "http://localhost:5173",
+  origin: (origin, cb) => {
+    const allowedOrigins = ["http://localhost:5173", "http://172.18.0.5:5173"];
+
+    if (!origin || allowedOrigins.includes(origin)) {
+      cb(null, true); // ✅ must provide 2 args: no error + origin allowed
+    } else {
+      cb(new Error("Not allowed by CORS"), false); // ✅ error + not allowed
+    }
+  },
   credentials: true,
 });
 server.register(adminRoutes);
