@@ -9,9 +9,14 @@ import {
 } from "./routes";
 import { loggerOptions, logger } from "./lib";
 import { config } from "./config";
+import cors from "@fastify/cors";
 
 const server = Fastify({ logger: loggerOptions });
 
+server.register(cors, {
+  origin: "http://localhost:5173",
+  credentials: true,
+});
 server.register(adminRoutes);
 server.register(authRoutes);
 server.register(tokenRoutes);

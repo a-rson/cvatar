@@ -1,24 +1,62 @@
-import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { Button } from "../components/ui/button";
 
 export default function HomePage() {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
-      <h1 className="text-4xl font-bold mb-6">Welcome to Cvatar</h1>
-      <p className="text-muted-foreground max-w-md mb-10">
-        Meet candidates and companies via intelligent AI-powered profiles.
-        Choose your role to begin.
-      </p>
+  const navigate = useNavigate();
 
-      <div className="space-y-4 w-full max-w-sm">
-        <Button variant="default" className="w-full">
-          I’m a Recruiter – Scan or Enter Token
-        </Button>
-        <Button variant="outline" className="w-full">
-          I’m a Client – Browse Companies
-        </Button>
-        <Button variant="ghost" className="w-full">
-          Candidate or Company – Log In / Register
-        </Button>
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center px-4">
+      <div className="bg-white shadow-md rounded-lg p-8 max-w-xl w-full">
+        <h1 className="text-3xl font-bold text-center mb-4">
+          Welcome to Cvatar
+        </h1>
+        <p className="text-gray-700 text-center text-lg mb-6">
+          Cvatar helps <strong>candidates</strong> and{" "}
+          <strong>companies</strong> build AI-powered interactive profiles that
+          speak on your behalf.
+        </p>
+        <ul className="space-y-4">
+          <li className="flex items-start gap-3">
+            <img
+              src="/assets/profile-icon.svg"
+              alt="Profile"
+              className="w-6 h-6 mt-1"
+            />
+            <span>
+              Create your profile with experience, skills, or company services
+            </span>
+          </li>
+          <li className="flex items-start gap-3">
+            <img
+              src="/assets/chat-icon.svg"
+              alt="Customize AI"
+              className="w-6 h-6 mt-1"
+            />
+            <span>Customize how your AI communicates</span>
+          </li>
+          <li className="flex items-start gap-3">
+            <img
+              src="/assets/qr-icon.svg"
+              alt="QR code"
+              className="w-6 h-6 mt-1"
+            />
+            <span>Generate a secure link or QR code</span>
+          </li>
+          <li className="flex items-start gap-3">
+            <img
+              src="/assets/send-icon.svg"
+              alt="Share"
+              className="w-6 h-6 mt-1"
+            />
+            <span>Share it — and let your AI handle the conversation</span>
+          </li>
+        </ul>
+        <div className="flex justify-center gap-4 mt-6">
+          <Button onClick={() => navigate("/register")}>Register</Button>
+          <Button variant="outline" onClick={() => navigate("/login")}>
+            Login
+          </Button>
+        </div>
       </div>
     </div>
   );
