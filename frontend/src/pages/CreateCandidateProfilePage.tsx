@@ -52,6 +52,13 @@ export default function CreateCandidateProfilePage() {
             Create Candidate Profile
           </h1>
           <form onSubmit={handleSubmit} className="space-y-4 max-w-xl">
+          <input
+              name="name"
+              placeholder="Profile Name"
+              className="w-full p-2 border rounded"
+              onChange={handleChange}
+              required
+            />
             <input
               name="firstName"
               placeholder="First Name"

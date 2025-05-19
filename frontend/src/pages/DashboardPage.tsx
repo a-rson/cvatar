@@ -63,6 +63,7 @@ export default function DashboardPage() {
             <thead>
               <tr>
                 <th className="py-2">ID</th>
+                <th>Profile Name</th>
                 <th>Type</th>
                 <th>Created At</th>
               </tr>
@@ -71,6 +72,7 @@ export default function DashboardPage() {
               {profiles.map((p) => (
                 <tr key={p.id} className="border-t">
                   <td className="py-2">{p.id}</td>
+                  <td>{p.name}</td>
                   <td>{p.type}</td>
                   <td>
                     {new Date(p.createdAt).toLocaleDateString(undefined, {
@@ -90,7 +92,11 @@ export default function DashboardPage() {
                       size="sm"
                       variant="outline"
                       onClick={async () => {
-                        const data = await createTokenForProfile(p.id);
+                        const name = prompt("Enter a name for this token:");
+                        if (!name) return;
+                        const data = await createTokenForProfile(p.id, {
+                          name,
+                        });
                         setTokenInfo(data);
                       }}
                     >
@@ -123,6 +129,7 @@ export default function DashboardPage() {
             <thead>
               <tr>
                 <th className="py-2">ID</th>
+                <th>Token Name</th>
                 <th>Type</th>
                 <th>Used</th>
                 <th>Expires At</th>
@@ -132,6 +139,7 @@ export default function DashboardPage() {
               {tokens.map((t) => (
                 <tr key={t.id} className="border-t">
                   <td className="py-2">{t.token}</td>
+                  <td>{t.name}</td>
                   <td>{t.type}</td>
                   <td>{t.used ? "Yes" : "No"}</td>
                   <td>
