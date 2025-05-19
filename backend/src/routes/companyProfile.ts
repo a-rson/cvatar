@@ -14,6 +14,7 @@ export async function companyProfileRoutes(server: FastifyInstance) {
       }
 
       const {
+        name,
         companyName,
         description,
         logoUrl,
@@ -24,25 +25,25 @@ export async function companyProfileRoutes(server: FastifyInstance) {
         contactPhone,
       } = request.body as any;
 
-      const existingProfile = await prisma.profile.findFirst({
-        where: { userId: user.id },
-        include: {
-          company: true,
-          candidate: true,
-        },
-      });
+      // const existingProfile = await prisma.profile.findFirst({
+      //   where: { userId: user.id },
+      //   include: {
+      //     company: true,
+      //     candidate: true,
+      //   },
+      // });
 
-      if (existingProfile?.company) {
-        return reply
-          .status(400)
-          .send({ error: "Company profile already exists." });
-      }
+      // if (existingProfile?.company) {
+      //   return reply
+      //     .status(400)
+      //     .send({ error: "Company profile already exists." });
+      // }
 
-      if (existingProfile?.candidate) {
-        return reply.status(400).send({
-          error: "Cannot create company profile when candidate profile exists.",
-        });
-      }
+      // if (existingProfile?.candidate) {
+      //   return reply.status(400).send({
+      //     error: "Cannot create company profile when candidate profile exists.",
+      //   });
+      // }
 
       try {
         const createdProfile = await prisma.profile.create({
@@ -50,6 +51,7 @@ export async function companyProfileRoutes(server: FastifyInstance) {
             user: { connect: { id: user.id } },
             company: {
               create: {
+                name,
                 companyName,
                 description,
                 logoUrl,

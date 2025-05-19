@@ -55,6 +55,7 @@ export async function getMyTokens() {
 export async function createTokenForProfile(
   profileId: string,
   options?: {
+    name?: string;
     expiresIn?: number;
     isOneTime?: boolean;
   }
@@ -66,6 +67,7 @@ export async function createTokenForProfile(
     "/token",
     {
       profileId,
+      name: options?.name ?? "Unnamed Token",
       expiresIn: options?.expiresIn ?? 60 * 60 * 24 * 7, // default: 7 days
       isOneTime: options?.isOneTime ?? true,
     },

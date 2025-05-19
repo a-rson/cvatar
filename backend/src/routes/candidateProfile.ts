@@ -13,27 +13,28 @@ export async function candidateProfileRoutes(server: FastifyInstance) {
         return reply.status(500).send({ error: "Internal server error" });
       }
 
-      const existingProfile = await prisma.profile.findFirst({
-        where: { userId: user.id },
-        include: {
-          candidate: true,
-          company: true,
-        },
-      });
+      // const existingProfile = await prisma.profile.findFirst({
+      //   where: { userId: user.id },
+      //   include: {
+      //     candidate: true,
+      //     company: true,
+      //   },
+      // });
 
-      if (existingProfile?.candidate) {
-        return reply
-          .status(400)
-          .send({ error: "Candidate profile already exists." });
-      }
+      // if (existingProfile?.candidate) {
+      //   return reply
+      //     .status(400)
+      //     .send({ error: "Candidate profile already exists." });
+      // }
 
-      if (existingProfile?.company) {
-        return reply.status(400).send({
-          error: "Cannot create candidate profile when company profile exists.",
-        });
-      }
+      // if (existingProfile?.company) {
+      //   return reply.status(400).send({
+      //     error: "Cannot create candidate profile when company profile exists.",
+      //   });
+      // }
 
       const {
+        name,
         firstName,
         lastName,
         description,
@@ -52,6 +53,7 @@ export async function candidateProfileRoutes(server: FastifyInstance) {
           user: { connect: { id: user.id } },
           candidate: {
             create: {
+              name,
               firstName,
               lastName,
               description,

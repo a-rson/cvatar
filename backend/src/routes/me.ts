@@ -21,12 +21,13 @@ export async function meRoutes(server: FastifyInstance) {
   server.get("/me/profiles", { preHandler: [verifyJWT] }, async (request) => {
     const profiles = await prisma.profile.findMany({
       where: { userId: request.user!.id },
-      include: { candidate: true, company: true },
+      include: { candidate: true, company: true, },
       orderBy: { createdAt: "desc" },
     });
 
     return profiles.map((p) => ({
       id: p.id,
+      name: p.candidate?.name || p.company?.name || "Unnamed",
       createdAt: p.createdAt,
       type: p.candidate ? "Candidate" : p.company ? "Company" : "Unknown",
     }));
@@ -42,6 +43,7 @@ export async function meRoutes(server: FastifyInstance) {
 
     return tokens.map((t) => ({
       id: t.id,
+      name: t.name,
       token: t.token,
       profileId: t.profileId,
       type: t.type,
