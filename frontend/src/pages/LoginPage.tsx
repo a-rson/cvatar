@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { login } from "../lib/api";
-import { getUserFromToken } from "../lib/auth";
-import AuthLayout from "../layouts/AuthLayout";
+import { login, getUserFromToken } from "@/lib";
+import { AuthLayout } from "@/components";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -26,7 +25,7 @@ export default function LoginPage() {
       if (user.type === "admin") {
         navigate("/admin");
       } else {
-        navigate("/provider/profile");
+        navigate("/dashboard");
       }
     } catch (err) {
       setError("Login failed. Please check your credentials.");

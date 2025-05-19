@@ -1,6 +1,5 @@
-import AuthLayout from "../layouts/AuthLayout";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../components/ui/button";
+import { AuthLayout, Button } from "@/components";
 
 export default function HomePage() {
   const navigate = useNavigate();

@@ -6,6 +6,7 @@ import {
   candidateProfileRoutes,
   companyProfileRoutes,
   tokenRoutes,
+  meRoutes,
 } from "./routes";
 import { loggerOptions, logger } from "./lib";
 import { config } from "./config";
@@ -20,13 +21,16 @@ server.register(cors, {
     if (!origin || allowedOrigins.includes(origin)) {
       cb(null, true);
     } else {
-      cb(new Error("Not allowed by CORS"), false); 
+      cb(new Error("Not allowed by CORS"), false);
     }
   },
   credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 });
-server.register(adminRoutes);
+
+server.register(meRoutes);
 server.register(authRoutes);
+server.register(adminRoutes);
 server.register(tokenRoutes);
 server.register(profileRoutes);
 server.register(candidateProfileRoutes);
