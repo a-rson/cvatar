@@ -82,10 +82,7 @@ export default function DashboardPage() {
                     })}
                   </td>
                   <td className="flex gap-2 py-2">
-                    <Button
-                      size="sm"
-                      onClick={() => navigate(`/profile/${p.id}`)}
-                    >
+                    <Button size="sm" onClick={() => navigate(`/chat/${p.id}`)}>
                       Visit
                     </Button>
                     <Button
@@ -138,7 +135,7 @@ export default function DashboardPage() {
             <tbody>
               {tokens.map((t) => (
                 <tr key={t.id} className="border-t">
-                  <td className="py-2">{t.token}</td>
+                  <td className="py-2">{t.id}</td>
                   <td>{t.name}</td>
                   <td>{t.type}</td>
                   <td>{t.used ? "Yes" : "No"}</td>

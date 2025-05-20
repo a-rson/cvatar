@@ -21,7 +21,7 @@ export async function meRoutes(server: FastifyInstance) {
   server.get("/me/profiles", { preHandler: [verifyJWT] }, async (request) => {
     const profiles = await prisma.profile.findMany({
       where: { userId: request.user!.id },
-      include: { candidate: true, company: true, },
+      include: { candidate: true, company: true },
       orderBy: { createdAt: "desc" },
     });
 
@@ -52,4 +52,44 @@ export async function meRoutes(server: FastifyInstance) {
       createdAt: t.createdAt,
     }));
   });
+
+  server.get(
+    "/me/profile/:id",
+    { preHandler: [verifyJWT] },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const user = request.user!;
+
+      const profile = await prisma.profile.findUnique({
+        where: { id },
+        include: {
+          candidate: {
+            include: {
+              workExperience: true,
+              techStack: true,
+              documents: true,
+            },
+          },
+          company: {
+            include: {
+              techStack: true,
+            },
+          },
+          botPersona: true,
+        },
+      });
+
+      if (!profile) {
+        return reply.status(404).send({ error: "Profile not found." });
+      }
+
+      if (profile.userId !== user.id) {
+        return reply
+          .status(403)
+          .send({ error: "Forbidden. You do not own this profile." });
+      }
+
+      return reply.send(profile);
+    }
+  );
 }

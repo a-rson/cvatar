@@ -87,3 +87,13 @@ export async function deleteToken(id: string) {
     },
   });
 }
+
+export async function getMyProfile(profileId: string) {
+  const token = localStorage.getItem("token");
+  const res = await axios.get(`/me/profile/${profileId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return res.data;
+}

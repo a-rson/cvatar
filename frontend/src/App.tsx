@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import {
   HomePage,
+  ChatPage,
   LoginPage,
   RegisterPage,
   DashboardPage,
@@ -37,6 +38,14 @@ function App() {
           element={
             <RequireAuth>
               <CreateCompanyProfilePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/chat/:profileId"
+          element={
+            <RequireAuth>
+              <ChatPage />
             </RequireAuth>
           }
         />
