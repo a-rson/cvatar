@@ -21,7 +21,7 @@ export async function meRoutes(server: FastifyInstance) {
   server.get("/me/profiles", { preHandler: [verifyJWT] }, async (request) => {
     const profiles = await prisma.profile.findMany({
       where: { userId: request.user!.id },
-      include: { candidate: true, company: true },
+      include: { candidate: true, company: true, botPersona: true },
       orderBy: { createdAt: "desc" },
     });
 
@@ -30,6 +30,7 @@ export async function meRoutes(server: FastifyInstance) {
       name: p.candidate?.name || p.company?.name || "Unnamed",
       createdAt: p.createdAt,
       type: p.candidate ? "Candidate" : p.company ? "Company" : "Unknown",
+      hasBotPersona: !!p.botPersona,
     }));
   });
 

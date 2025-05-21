@@ -7,6 +7,8 @@ import {
   companyProfileRoutes,
   tokenRoutes,
   meRoutes,
+  botPersonaRoutes,
+  chatRoutes,
 } from "./routes";
 import { loggerOptions, logger } from "./lib";
 import { config } from "./config";
@@ -25,7 +27,7 @@ server.register(cors, {
     }
   },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 });
 
 server.register(meRoutes);
@@ -33,6 +35,8 @@ server.register(authRoutes);
 server.register(adminRoutes);
 server.register(tokenRoutes);
 server.register(profileRoutes);
+server.register(chatRoutes);
+server.register(botPersonaRoutes);
 server.register(candidateProfileRoutes);
 server.register(companyProfileRoutes);
 
