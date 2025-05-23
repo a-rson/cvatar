@@ -4,6 +4,7 @@ export const config = {
   BASE_URL: requireEnv("BASE_URL"),
   REDIS_HOST: requireEnv("REDIS_HOST"),
   REDIS_PORT: requireEnv("REDIS_PORT"),
+  OPENAI_API_KEY: requireEnv("OPENAI_API_KEY"),
   env: process.env.NODE_ENV || "development",
   isDev: process.env.NODE_ENV !== "production",
   logLevel: process.env.LOG_LEVEL || "info",

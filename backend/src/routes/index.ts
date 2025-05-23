@@ -3,5 +3,7 @@ export * from "./auth";
 export * from "./admin";
 export * from "./token";
 export * from "./profile";
+export * from "./chat";
+export * from "./botPersona";
 export * from "./companyProfile";
 export * from "./candidateProfile";

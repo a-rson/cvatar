@@ -1,19 +1,21 @@
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyReply } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import { redis, generateQRCodeUrl, prisma } from "../lib";
 import { config } from "../config";
 import { verifyJWT } from "../middleware";
+import { Token } from "@prisma/client";
 
 interface TokenRequest {
   profileId: string;
-  name: string,
+  name: string;
   expiresIn: number; // sec.
   isOneTime: boolean;
 }
 
 export async function tokenRoutes(server: FastifyInstance) {
   server.post("/token", { preHandler: [verifyJWT] }, async (request, reply) => {
-    const { profileId, name, expiresIn, isOneTime } = request.body as TokenRequest;
+    const { profileId, name, expiresIn, isOneTime } =
+      request.body as TokenRequest;
     const tokenValue = uuidv4();
     const userId = request.user!.id;
 
@@ -67,4 +69,56 @@ export async function tokenRoutes(server: FastifyInstance) {
       return reply.send({ success: true });
     }
   );
+
+  server.post(
+    "/token/:id/end",
+    { preHandler: [verifyJWT.optional] },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const token = await prisma.token.findUnique({ where: { id } });
+      if (!token) return reply.status(404).send({ error: "Token not found." });
+
+      const user = request.user;
+      const accessToken = request.headers["authorization-token"] as
+        | string
+        | undefined;
+
+      // Case 1: JWT user (creator or admin)
+      if (user) {
+        const isCreator = user.id === token.createdById;
+        const isAdmin = user.type === "admin";
+
+        if (!isCreator && !isAdmin) {
+          return reply
+            .status(403)
+            .send({ error: "Unauthorized to end this session." });
+        }
+
+        return await updateAndSendToken(reply, id, token);
+      }
+
+      // Case 2: Access token path (unauthenticated client)
+      if (!accessToken || accessToken !== token.token || token.used) {
+        return reply
+          .status(403)
+          .send({ error: "Unauthorized to end this session." });
+      }
+
+      return await updateAndSendToken(reply, id, token);
+    }
+  );
+}
+
+async function updateAndSendToken(
+  reply: FastifyReply,
+  id: string,
+  token: Token
+) {
+  await prisma.token.update({ where: { id }, data: { used: true } });
+  await redis.del(`token:${token.token}`);
+
+  return reply.send({
+    success: true,
+    message: "Session ended and token invalidated.",
+  });
 }

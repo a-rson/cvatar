@@ -87,3 +87,44 @@ export async function deleteToken(id: string) {
     },
   });
 }
+
+export async function getMyProfile(profileId: string) {
+  const token = localStorage.getItem("token");
+  const res = await axios.get(`/me/profile/${profileId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return res.data;
+}
+
+export async function updateBotPersona(
+  profileId: string,
+  data: {
+    language: string;
+    style: string;
+    introPrompt: string;
+  }
+) {
+  const token = localStorage.getItem("token");
+  const res = await axios.patch(`/bot-persona/${profileId}`, data, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
+}
+
+export async function sendChatMessage(
+  profileId: string,
+  message: string
+): Promise<string> {
+  const token = localStorage.getItem("token");
+  const accessToken = localStorage.getItem("access-token");
+
+  const headers = token
+    ? { Authorization: `Bearer ${token}` }
+    : { "authorization-token": accessToken ?? "" };
+
+  const res = await axios.post(`/chat/${profileId}`, { message }, { headers });
+  console.log(res);
+  return res.data.response;
+}

@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks";
 import { useEffect, useState } from "react";
 import { AppLayout, Button } from "@/components";
 import { useNavigate } from "react-router-dom";
+import { SlidersHorizontal, Trash2, Copy, MessageCircle } from "lucide-react";
 import {
   getMyProfiles,
   createTokenForProfile,
@@ -66,6 +67,7 @@ export default function DashboardPage() {
                 <th>Profile Name</th>
                 <th>Type</th>
                 <th>Created At</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -84,37 +86,31 @@ export default function DashboardPage() {
                   <td className="flex gap-2 py-2">
                     <Button
                       size="sm"
-                      onClick={() => navigate(`/profile/${p.id}`)}
-                    >
-                      Visit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={async () => {
-                        const name = prompt("Enter a name for this token:");
-                        if (!name) return;
-                        const data = await createTokenForProfile(p.id, {
-                          name,
-                        });
-                        setTokenInfo(data);
-                      }}
-                    >
-                      Create Token
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
+                      variant={"outline"}
                       onClick={() => navigate(`/edit-profile/${p.id}`)}
                     >
-                      Edit
+                      <SlidersHorizontal className="w-4 h-4" />
+                    </Button>
+
+                    <Button
+                      size="icon"
+                      variant={"outline"}
+                      disabled={!p.hasBotPersona}
+                      onClick={() => navigate(`/chat/${p.id}`)}
+                      title={
+                        p.hasBotPersona
+                          ? "Chat with your bot"
+                          : "Add bot persona to enable chat"
+                      }
+                    >
+                      <MessageCircle className="w-4 h-4" />
                     </Button>
                     <Button
-                      size="sm"
-                      variant="destructive"
+                      size="icon"
+                      variant={"outline"}
                       onClick={() => console.log(p.id)}
                     >
-                      Delete
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </td>
                 </tr>
@@ -133,12 +129,13 @@ export default function DashboardPage() {
                 <th>Type</th>
                 <th>Used</th>
                 <th>Expires At</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {tokens.map((t) => (
                 <tr key={t.id} className="border-t">
-                  <td className="py-2">{t.token}</td>
+                  <td className="py-2">{t.id}</td>
                   <td>{t.name}</td>
                   <td>{t.type}</td>
                   <td>{t.used ? "Yes" : "No"}</td>
@@ -151,19 +148,23 @@ export default function DashboardPage() {
                         })
                       : "—"}
                   </td>
-                  <td className="flex gap-2">
-                    <Button size="sm" onClick={() => copyToClipboard(t.token)}>
-                      Copy
+                  <td className="flex gap-2 ">
+                    <Button
+                      size="icon"
+                      variant={"outline"}
+                      onClick={() => copyToClipboard(t.token)}
+                    >
+                      <Copy className="w-4 h-4" />
                     </Button>
                     <Button
-                      size="sm"
-                      variant="destructive"
+                      size="icon"
+                      variant="outline"
                       onClick={async () => {
                         await deleteToken(t.id);
                         getMyTokens().then(setTokens);
                       }}
                     >
-                      Delete
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </td>
                 </tr>

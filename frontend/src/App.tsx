@@ -1,9 +1,11 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import {
   HomePage,
+  ChatPage,
   LoginPage,
   RegisterPage,
   DashboardPage,
+  EditProfilePage,
   CreateCompanyProfilePage,
   CreateCandidateProfilePage,
 } from "@/pages";
@@ -37,6 +39,22 @@ function App() {
           element={
             <RequireAuth>
               <CreateCompanyProfilePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/chat/:profileId"
+          element={
+            <RequireAuth>
+              <ChatPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/edit-profile/:profileId"
+          element={
+            <RequireAuth>
+              <EditProfilePage />
             </RequireAuth>
           }
         />
