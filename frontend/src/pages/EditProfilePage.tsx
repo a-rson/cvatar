@@ -1,39 +1,40 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getMyProfile, updateBotPersona } from "@/lib/api";
-import { AppLayout, Button } from "@/components";
+import {
+  AppLayout,
+  CandidateProfileForm,
+  BotPersonaForm,
+  DocumentManager,
+} from "@/components";
 
 export default function EditProfilePage() {
   const { profileId } = useParams();
   const [profile, setProfile] = useState<any>(null);
-  const [botForm, setBotForm] = useState({ language: "en", style: "formal", introPrompt: "" });
-  const [profileForm, setProfileForm] = useState({ firstName: "", lastName: "", description: "" });
-  const [docTitle, setDocTitle] = useState("");
-  const [docContent, setDocContent] = useState("");
+  const [activeTab, setActiveTab] = useState<"general" | "bot" | "documents">(
+    "general"
+  );
+  const [botForm, setBotForm] = useState({
+    language: "en",
+    style: "formal",
+    introPrompt: "",
+  });
+  const [savingPersona, setSavingPersona] = useState(false);
   const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     async function load() {
       try {
-        const profile = await getMyProfile(profileId!);
-        setProfile(profile);
+        const profileData = await getMyProfile(profileId!);
+        setProfile(profileData);
 
-        const bp = profile.botPersona || {};
+        const bp = profileData.botPersona || {};
         setBotForm({
           language: bp.language || "en",
           style: bp.style || "formal",
           introPrompt: bp.introPrompt || "",
         });
-
-        const c = profile.candidate;
-        if (c) {
-          setProfileForm({
-            firstName: c.firstName || "",
-            lastName: c.lastName || "",
-            description: c.description || "",
-          });
-        }
       } catch (err) {
         setError("Failed to load profile or unauthorized.");
       }
@@ -42,24 +43,35 @@ export default function EditProfilePage() {
     load();
   }, [profileId]);
 
-  const handleBotChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setBotForm({ ...botForm, [e.target.name]: e.target.value });
-    setSaved(false);
-  };
-
-  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setProfileForm({ ...profileForm, [e.target.name]: e.target.value });
-    setSaved(false);
+  const handleBotChange = (field: string, value: string) => {
+    setBotForm((prev) => ({ ...prev, [field]: value }));
+    setSuccess("");
   };
 
   const handleSavePersona = async () => {
+    setSavingPersona(true);
     try {
       await updateBotPersona(profileId!, botForm);
-      setSaved(true);
+      setSuccess("Bot persona saved!");
       setError("");
-    } catch (err) {
+    } catch {
       setError("Failed to save bot persona.");
+    } finally {
+      setSavingPersona(false);
     }
+  };
+
+  const handleProfileSubmit = async (data: any) => {
+    console.log("TODO: Send updated profile data", data);
+    setSuccess("Profile info saved! (Mocked)");
+  };
+
+  const handleUpload = (file: File) => {
+    console.log("TODO: Upload file", file.name);
+  };
+
+  const handleCreateDocument = (title: string, content: string) => {
+    console.log("TODO: Create internal document", { title, content });
   };
 
   return (
@@ -67,113 +79,67 @@ export default function EditProfilePage() {
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         <h1 className="text-2xl font-semibold">Edit Profile</h1>
 
-        {/* PROFILE INFO */}
-        <section className="bg-white rounded shadow p-4 space-y-4">
-          <h2 className="text-lg font-medium">🧍 Profile Information</h2>
-          <input
-            name="firstName"
-            value={profileForm.firstName}
-            onChange={handleProfileChange}
-            placeholder="First Name"
-            className="w-full p-2 border rounded"
-          />
-          <input
-            name="lastName"
-            value={profileForm.lastName}
-            onChange={handleProfileChange}
-            placeholder="Last Name"
-            className="w-full p-2 border rounded"
-          />
-          <textarea
-            name="description"
-            value={profileForm.description}
-            onChange={handleProfileChange}
-            placeholder="Profile Description"
-            className="w-full p-2 border rounded"
-            rows={3}
-          />
-          <Button disabled>Save Profile Info (TODO)</Button>
-        </section>
+        {/* TABS */}
+        <div className="flex gap-4 border-b mb-4">
+          {["general", "bot", "documents"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab as any)}
+              className={`pb-2 capitalize ${
+                activeTab === tab
+                  ? "border-b-2 border-blue-600 font-medium"
+                  : "text-gray-500"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
 
-        {/* BOT SETTINGS */}
-        <section className="bg-white rounded shadow p-4 space-y-4">
-          <h2 className="text-lg font-medium">🤖 Bot Persona</h2>
-          <select
-            name="language"
-            value={botForm.language}
-            onChange={handleBotChange}
-            className="w-full p-2 border rounded"
-          >
-            <option value="en">English</option>
-            <option value="pl">Polish</option>
-          </select>
-          <select
-            name="style"
-            value={botForm.style}
-            onChange={handleBotChange}
-            className="w-full p-2 border rounded"
-          >
-            <option value="formal">Formal</option>
-            <option value="casual">Casual</option>
-            <option value="concise">Concise</option>
-            <option value="enthusiastic">Enthusiastic</option>
-          </select>
-          <textarea
-            name="introPrompt"
-            value={botForm.introPrompt}
-            onChange={handleBotChange}
-            placeholder="Custom instructions for the bot..."
-            className="w-full p-2 border rounded"
-            rows={4}
+        {/* PROFILE FORM */}
+        {activeTab === "general" && profile?.candidate && (
+          <CandidateProfileForm
+            initialValues={{
+              name: profile.candidate.name || "",
+              firstName: profile.candidate.firstName,
+              lastName: profile.candidate.lastName,
+              description: profile.candidate.description || "",
+              maritalStatus: profile.candidate.maritalStatus || "",
+              education: (profile.candidate.education || []).join(","),
+              spokenLanguages: (profile.candidate.spokenLanguages || []).join(
+                ","
+              ),
+              yearsOfExperience:
+                profile.candidate.yearsOfExperience?.toString() || "0",
+              softSkills: (profile.candidate.softSkills || []).join(","),
+              avatarUrl: profile.candidate.avatarUrl || "",
+            }}
+            onSubmit={handleProfileSubmit}
           />
-          <Button onClick={handleSavePersona}>Save Bot Persona</Button>
-        </section>
+        )}
+
+        {/* BOT PERSONA FORM */}
+        {activeTab === "bot" && (
+          <BotPersonaForm
+            value={botForm}
+            onChange={handleBotChange}
+            onSubmit={handleSavePersona}
+            loading={savingPersona}
+          />
+        )}
 
         {/* DOCUMENTS */}
-        <section className="bg-white rounded shadow p-4 space-y-4">
-          <h2 className="text-lg font-medium">📄 Documents</h2>
-          <form
-            className="space-y-2"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              console.log("TODO: Upload doc", docTitle, docContent);
-            }}
-          >
-            <input
-              type="text"
-              placeholder="Document Title"
-              value={docTitle}
-              onChange={(e) => setDocTitle(e.target.value)}
-              className="w-full p-2 border rounded"
-            />
-            <textarea
-              placeholder="Document Content"
-              value={docContent}
-              onChange={(e) => setDocContent(e.target.value)}
-              className="w-full p-2 border rounded"
-              rows={4}
-            />
-            <Button type="submit">Upload Document (TODO)</Button>
-          </form>
+        {activeTab === "documents" && (
+          <DocumentManager
+            documents={profile?.candidate?.documents || []}
+            onUpload={handleUpload}
+            onCreate={handleCreateDocument}
+          />
+        )}
 
-          <ul className="divide-y">
-            {profile?.candidate?.documents?.map((doc: any) => (
-              <li key={doc.id} className="py-2 flex justify-between items-center">
-                <span>{doc.title}</span>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => console.log("TODO: Remove doc", doc.id)}
-                >
-                  Remove
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </section>
-
+        {/* MESSAGES */}
         {error && <p className="text-red-500">{error}</p>}
-        {saved && <p className="text-green-600">Bot persona saved!</p>}
+        {success && <p className="text-green-600">{success}</p>}
       </div>
     </AppLayout>
   );
