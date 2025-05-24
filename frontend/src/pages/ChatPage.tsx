@@ -50,7 +50,7 @@ export default function ChatPage() {
           <div className="bg-white rounded shadow p-4 text-center">
             <img
               src={profile?.candidate?.avatarUrl || "/default-avatar.png"}
-              alt="Candidate avatar"
+              alt="Avatar"
               className="w-32 h-32 rounded-full object-cover mx-auto mb-2"
             />
             <h2 className="text-lg font-semibold">
@@ -63,14 +63,14 @@ export default function ChatPage() {
 
           {isOwner ? (
             <div className="bg-white rounded shadow p-4 space-y-2">
-              <h3 className="text-sm font-medium text-gray-700">
-                Bot Settings
-              </h3>
               <Button
                 onClick={() => navigate(`/edit-profile/${profileId}`)}
                 variant="outline"
               >
-                Edit Bot Persona
+                Edit Profile
+              </Button>
+              <Button onClick={() => {}} variant="outline">
+                Create Token
               </Button>
             </div>
           ) : (

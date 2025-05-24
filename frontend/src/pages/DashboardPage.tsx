@@ -1,18 +1,20 @@
 import { useAuth } from "@/hooks";
 import { useEffect, useState } from "react";
-import { AppLayout, Button } from "@/components";
+import { AppLayout, Button, CreateTokenModal } from "@/components";
 import { useNavigate } from "react-router-dom";
-import { SlidersHorizontal, Trash2, Copy, MessageCircle } from "lucide-react";
 import {
-  getMyProfiles,
-  createTokenForProfile,
-  getMyTokens,
-  deleteToken,
-} from "@/lib";
+  SlidersHorizontal,
+  Trash2,
+  Copy,
+  MessageCircle,
+  Link,
+} from "lucide-react";
+import { getMyProfiles, getMyTokens, deleteToken, deleteProfile } from "@/lib";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth({ verifyWithMe: true });
+  const [showModalFor, setShowModalFor] = useState<string | null>(null);
   const [tokenInfo, setTokenInfo] = useState<any | null>(null);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [tokens, setTokens] = useState<any[]>([]);
@@ -107,8 +109,18 @@ export default function DashboardPage() {
                     </Button>
                     <Button
                       size="icon"
+                      variant="outline"
+                      onClick={() => setShowModalFor(p.id)}
+                    >
+                      <Link className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="icon"
                       variant={"outline"}
-                      onClick={() => console.log(p.id)}
+                      onClick={async () => {
+                        await deleteProfile(p.id);
+                        getMyProfiles().then(setProfiles);
+                      }}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -204,6 +216,15 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
+          )}
+          {showModalFor && (
+            <CreateTokenModal
+              profileId={showModalFor}
+              onClose={() => setShowModalFor(null)}
+              onCreated={(data) => {
+                setTokenInfo(data);
+              }}
+            />
           )}
         </div>
       </div>

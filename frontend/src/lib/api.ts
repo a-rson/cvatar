@@ -98,6 +98,15 @@ export async function getMyProfile(profileId: string) {
   return res.data;
 }
 
+export async function deleteProfile(profileId: string) {
+  const token = localStorage.getItem("token");
+  return await axios.delete(`/profile/${profileId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
 export async function updateBotPersona(
   profileId: string,
   data: {
