@@ -1,12 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { AppLayout, CandidateProfileForm } from "@/components";
-import { createTypedProfile } from "@/lib";
+import { createTypedSubProfile } from "@/lib";
 
 export default function CreateCandidateProfilePage() {
   const navigate = useNavigate();
 
   const handleCreate = async (data: any) => {
-    await createTypedProfile("candidate", data);
+    await createTypedSubProfile("candidate", data);
     navigate("/dashboard");
   };
 
@@ -24,11 +24,11 @@ export default function CreateCandidateProfilePage() {
               lastName: "",
               description: "",
               maritalStatus: "",
-              education: "",
-              spokenLanguages: "",
+              education: [],
+              spokenLanguages: [],
               yearsOfExperience: "0",
-              softSkills: "",
-              avatarUrl: "",
+              softSkills: [],
+              avatar: null,
             }}
             onSubmit={handleCreate}
           />

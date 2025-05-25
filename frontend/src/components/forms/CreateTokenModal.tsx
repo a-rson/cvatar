@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createTokenForProfile } from "@/lib/api";
+import { createTokenForSubProfile } from "@/lib/api";
 import { Button } from "@/components";
 import { X } from "lucide-react";
 
@@ -33,7 +33,7 @@ export default function CreateTokenModal({
     e.preventDefault();
     try {
       setLoading(true);
-      const tokenData = await createTokenForProfile(profileId, {
+      const tokenData = await createTokenForSubProfile(profileId, {
         name,
         expiresIn,
         isOneTime,

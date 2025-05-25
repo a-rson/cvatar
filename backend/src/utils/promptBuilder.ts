@@ -1,39 +1,61 @@
-import { Profile, BotPersona } from "@prisma/client";
+import { CandidateProfile, CompanyProfile, Agent } from "@prisma/client";
 
-export function buildPrompt(profile: any, persona: BotPersona | null): string {
-  const style = persona?.style || "formal";
-  const language = persona?.language || "en";
-  const intro = persona?.introPrompt || "";
+type SubProfile =
+  | (CandidateProfile & {
+      techStack?: { name: string }[];
+      workExperience?: { position: string; company: string; years: number }[];
+      documents?: { title: string; content: string }[];
+    })
+  | (CompanyProfile & {
+      techStack?: { name: string }[];
+    });
 
-  const isCandidate = !!profile.candidate;
-  const entity = isCandidate ? profile.candidate : profile.company;
+export function buildPrompt(
+  subprofile: SubProfile,
+  agent: Agent | null
+): string {
+  const {
+    name = "",
+    language = "en",
+    style = "formal",
+    tone = "neutral",
+    answerLength = "medium",
+    introPrompt = "Hi, how can I help you?",
+    disclaimerText = "",
+    customInstructions = "",
+  } = agent || {};
+
+  const isCandidate = "yearsOfExperience" in subprofile;
 
   const profileData = isCandidate
     ? `
-Name: ${entity.name}
-Experience: ${entity.yearsOfExperience} years
-Education: ${entity.education?.join(", ")}
-Languages: ${entity.spokenLanguages?.join(", ")}
-Soft Skills: ${entity.softSkills?.join(", ")}
-Tech Stack: ${entity.techStack?.map((t: any) => t.name).join(", ")}
-Work Experience: ${entity.workExperience
-        ?.map((w: any) => `${w.position} at ${w.company} (${w.years})`)
+Name: ${subprofile.name}
+Experience: ${subprofile.yearsOfExperience} years
+Education: ${subprofile.education?.join(", ")}
+Languages: ${subprofile.spokenLanguages?.join(", ")}
+Soft Skills: ${subprofile.softSkills?.join(", ")}
+Tech Stack: ${subprofile.techStack?.map((t) => t.name).join(", ")}
+Work Experience: ${subprofile.workExperience
+        ?.map((w) => `${w.position} at ${w.company} (${w.years} years)`)
         .join("; ")}
 `
     : `
-Company: ${entity.companyName}
-Services: ${entity.services?.join(", ")}
-Team Size: ${entity.teamSize}
-Tech Stack: ${entity.techStack?.map((t: any) => t.name).join(", ")}
+Company: ${subprofile.companyName}
+Services: ${subprofile.services?.join(", ")}
+Team Size: ${subprofile.teamSize}
+Tech Stack: ${subprofile.techStack?.map((t) => t.name).join(", ")}
 `;
 
   return `
 You are CVATAR, a helpful AI assistant representing ${
-    entity.name || entity.companyName
+    isCandidate ? subprofile.name : subprofile.companyName
   }.
 You only speak based on the profile data provided below.
-Answer questions in a ${style} tone and in ${language}.
-${intro}
+Answer questions in a ${style} ${tone} and in ${language}. 
+Use this phrase as the first message: ${introPrompt}
+Try to keep your answers ${answerLength}. 
+Always take into account ${customInstructions} and if it makes sense show disclaimer: ${disclaimerText}
+
 
 ${profileData}
 `;

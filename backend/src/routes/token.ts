@@ -6,39 +6,52 @@ import { verifyJWT } from "../middleware";
 import { Token } from "@prisma/client";
 
 interface TokenRequest {
-  profileId: string;
+  subprofileId: string;
+  profileType: "candidate" | "company";
   name: string;
-  expiresIn: number; // sec.
+  expiresIn: number; // sec
   isOneTime: boolean;
 }
 
 export async function tokenRoutes(server: FastifyInstance) {
   server.post("/token", { preHandler: [verifyJWT] }, async (request, reply) => {
-    const { profileId, name, expiresIn, isOneTime } =
+    const { subprofileId, profileType, name, expiresIn, isOneTime } =
       request.body as TokenRequest;
+
     const tokenValue = uuidv4();
     const userId = request.user!.id;
 
-    // Store in Redis (for session or temp validation)
+    // Save to Redis
     await redis.set(
       `token:${tokenValue}`,
-      JSON.stringify({ profileId, name, isOneTime, used: false }),
+      JSON.stringify({
+        subprofileId,
+        profileType,
+        name,
+        isOneTime,
+        used: false,
+      }),
       "EX",
       expiresIn
     );
 
-    // Also store in DB for persistence and listing
-    const dbToken = await prisma.token.create({
-      data: {
-        token: tokenValue,
-        profileId,
-        name,
-        createdById: userId,
-        type: isOneTime ? "one-time" : "time-limited",
-        expiresAt: new Date(Date.now() + expiresIn * 1000),
-        wasStoredInRedis: true,
-      },
-    });
+    // Build data object for Prisma
+    const tokenData: any = {
+      token: tokenValue,
+      name,
+      createdById: userId,
+      type: isOneTime ? "one_time" : "time_limited",
+      expiresAt: new Date(Date.now() + expiresIn * 1000),
+      wasStoredInRedis: true,
+    };
+
+    if (profileType === "candidate") {
+      tokenData.candidateProfileId = subprofileId;
+    } else {
+      tokenData.companyProfileId = subprofileId;
+    }
+
+    const dbToken = await prisma.token.create({ data: tokenData });
 
     const qrUrl = `${config.baseUrl}/token/${tokenValue}`;
     const qrImage = await generateQRCodeUrl(qrUrl);
@@ -51,7 +64,6 @@ export async function tokenRoutes(server: FastifyInstance) {
     { preHandler: [verifyJWT] },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-
       const token = await prisma.token.findUnique({ where: { id } });
 
       if (!token) {
@@ -76,6 +88,7 @@ export async function tokenRoutes(server: FastifyInstance) {
     async (request, reply) => {
       const { id } = request.params as { id: string };
       const token = await prisma.token.findUnique({ where: { id } });
+
       if (!token) return reply.status(404).send({ error: "Token not found." });
 
       const user = request.user;
@@ -83,21 +96,19 @@ export async function tokenRoutes(server: FastifyInstance) {
         | string
         | undefined;
 
-      // Case 1: JWT user (creator or admin)
+      // Case 1: Authenticated
       if (user) {
         const isCreator = user.id === token.createdById;
         const isAdmin = user.type === "admin";
-
         if (!isCreator && !isAdmin) {
           return reply
             .status(403)
             .send({ error: "Unauthorized to end this session." });
         }
-
         return await updateAndSendToken(reply, id, token);
       }
 
-      // Case 2: Access token path (unauthenticated client)
+      // Case 2: Anonymous via access token
       if (!accessToken || accessToken !== token.token || token.used) {
         return reply
           .status(403)

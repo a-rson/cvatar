@@ -5,7 +5,7 @@ import {
   LoginPage,
   RegisterPage,
   DashboardPage,
-  EditProfilePage,
+  EditSubProfilePage,
   CreateCompanyProfilePage,
   CreateCandidateProfilePage,
 } from "@/pages";
@@ -43,7 +43,7 @@ function App() {
           }
         />
         <Route
-          path="/chat/:profileId"
+          path="/chat/:subProfileId"
           element={
             <RequireAuth>
               <ChatPage />
@@ -51,10 +51,10 @@ function App() {
           }
         />
         <Route
-          path="/edit-profile/:profileId"
+          path="/edit-sub-profile/:subProfileId"
           element={
             <RequireAuth>
-              <EditProfilePage />
+              <EditSubProfilePage />
             </RequireAuth>
           }
         />

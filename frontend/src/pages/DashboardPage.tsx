@@ -9,33 +9,26 @@ import {
   MessageCircle,
   Link,
 } from "lucide-react";
-import { getMyProfiles, getMyTokens, deleteToken, deleteProfile } from "@/lib";
+import {
+  getMySubProfiles,
+  getMyTokens,
+  deleteToken,
+  deleteSubProfile,
+} from "@/lib";
+import { copyToClipboard } from "@/utils";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth({ verifyWithMe: true });
   const [showModalFor, setShowModalFor] = useState<string | null>(null);
   const [tokenInfo, setTokenInfo] = useState<any | null>(null);
-  const [profiles, setProfiles] = useState<any[]>([]);
+  const [subProfiles, setSubProfiles] = useState<any[]>([]);
   const [tokens, setTokens] = useState<any[]>([]);
 
   useEffect(() => {
-    getMyProfiles().then(setProfiles).catch(console.error);
+    getMySubProfiles().then(setSubProfiles).catch(console.error);
     getMyTokens().then(setTokens).catch(console.error);
   }, [tokenInfo]);
-
-  const copyToClipboard = (text: string) => {
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(text).catch(console.error);
-    } else {
-      const input = document.createElement("input");
-      input.value = text;
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand("copy");
-      document.body.removeChild(input);
-    }
-  };
 
   return (
     <AppLayout>
@@ -45,7 +38,7 @@ export default function DashboardPage() {
         <div className="mb-8 bg-white shadow p-6 rounded">
           <h2 className="text-xl font-medium mb-2">User Info</h2>
           <p>Email: {user?.email}</p>
-          <p>Type: {user?.type}</p>
+          <p>Account Type: {user?.type}</p>
         </div>
 
         <div className="mb-8 flex gap-4">
@@ -73,13 +66,13 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {profiles.map((p) => (
-                <tr key={p.id} className="border-t">
-                  <td className="py-2">{p.id}</td>
-                  <td>{p.name}</td>
-                  <td>{p.type}</td>
+              {subProfiles.map((subProfile) => (
+                <tr key={subProfile.id} className="border-t">
+                  <td className="py-2">{subProfile.id}</td>
+                  <td>{subProfile.name}</td>
+                  <td>{subProfile.type}</td>
                   <td>
-                    {new Date(p.createdAt).toLocaleDateString(undefined, {
+                    {new Date(subProfile.createdAt).toLocaleDateString(undefined, {
                       year: "numeric",
                       month: "short",
                       day: "numeric",
@@ -89,7 +82,7 @@ export default function DashboardPage() {
                     <Button
                       size="sm"
                       variant={"outline"}
-                      onClick={() => navigate(`/edit-profile/${p.id}`)}
+                      onClick={() => navigate(`/edit-sub-profile/${subProfile.id}`)}
                     >
                       <SlidersHorizontal className="w-4 h-4" />
                     </Button>
@@ -97,12 +90,12 @@ export default function DashboardPage() {
                     <Button
                       size="icon"
                       variant={"outline"}
-                      disabled={!p.hasBotPersona}
-                      onClick={() => navigate(`/chat/${p.id}`)}
+                      disabled={!subProfile.hasAgent}
+                      onClick={() => navigate(`/chat/${subProfile.id}`)}
                       title={
-                        p.hasBotPersona
-                          ? "Chat with your bot"
-                          : "Add bot persona to enable chat"
+                        subProfile.hasAgent
+                          ? "Chat with your Agent"
+                          : "Add an Agent to enable chat"
                       }
                     >
                       <MessageCircle className="w-4 h-4" />
@@ -110,7 +103,7 @@ export default function DashboardPage() {
                     <Button
                       size="icon"
                       variant="outline"
-                      onClick={() => setShowModalFor(p.id)}
+                      onClick={() => setShowModalFor(subProfile.id)}
                     >
                       <Link className="w-4 h-4" />
                     </Button>
@@ -118,8 +111,8 @@ export default function DashboardPage() {
                       size="icon"
                       variant={"outline"}
                       onClick={async () => {
-                        await deleteProfile(p.id);
-                        getMyProfiles().then(setProfiles);
+                        await deleteSubProfile(subProfile.id);
+                        getMySubProfiles().then(setSubProfiles);
                       }}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -132,7 +125,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-white shadow p-6 rounded">
-          <h2 className="text-xl font-medium mb-4">Your Tokens</h2>
+          <h2 className="text-xl font-medium mb-4">Your Profile Tokens</h2>
           <table className="w-full text-left text-sm">
             <thead>
               <tr>

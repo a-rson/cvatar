@@ -7,18 +7,27 @@ import {
   companyProfileRoutes,
   tokenRoutes,
   meRoutes,
-  botPersonaRoutes,
+  agentRoutes,
   chatRoutes,
 } from "./routes";
 import { loggerOptions, logger } from "./lib";
 import { config } from "./config";
 import cors from "@fastify/cors";
+import fastifyMultipart from "@fastify/multipart";
 
 const server = Fastify({ logger: loggerOptions });
 
+server.register(fastifyMultipart, {
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+});
+
 server.register(cors, {
   origin: (origin, cb) => {
-    const allowedOrigins = ["http://localhost:5173", "http://172.18.0.5:5173"];
+    const allowedOrigins = [
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      "http://172.18.0.5:5173",
+    ];
 
     if (!origin || allowedOrigins.includes(origin)) {
       cb(null, true);
@@ -36,7 +45,7 @@ server.register(adminRoutes);
 server.register(tokenRoutes);
 server.register(profileRoutes);
 server.register(chatRoutes);
-server.register(botPersonaRoutes);
+server.register(agentRoutes);
 server.register(candidateProfileRoutes);
 server.register(companyProfileRoutes);
 

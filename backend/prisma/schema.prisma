@@ -13,34 +13,58 @@ enum UserType {
   admin
 }
 
+enum AgentStyle {
+  formal
+  casual
+  concise
+  enthusiastic
+}
+
+enum AgentTone {
+  neutral
+  friendly
+  professional
+  humorous
+}
+
+enum AnswerLength {
+  short
+  medium
+  long
+}
+
+enum TokenType {
+  one_time
+  time_limited
+}
+
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
+  id        String   @id @default(uuid())
+  email     String   @unique
   password  String
   type      UserType
-  profiles  Profile[] // relevant only if type === "provider"
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
 
-  createdTokens Token[]        @relation("TokenCreator")
-  usedTokens    Token[]        @relation("TokenUser")
-  accessLogs    TokenAccessLog[]
+  profile        Profile?
+  createdTokens  Token[]          @relation("TokenCreator")
+  receivedTokens Token[]          @relation("TokenReceiver")
+  accessLogs     TokenAccessLog[]
 }
 
 model Profile {
   id        String   @id @default(uuid())
-  userId    String
+  userId    String   @unique
   createdAt DateTime @default(now())
 
-  user       User              @relation(fields: [userId], references: [id])
-  candidate  CandidateProfile?
-  company    CompanyProfile?
-  botPersona BotPersona?
-  tokens     Token[]
-  accessLogs TokenAccessLog[]
+  user              User               @relation(fields: [userId], references: [id])
+  candidateProfiles CandidateProfile[]
+  companyProfiles   CompanyProfile[]
+  documents         Document[]         @relation("ProfileDocuments")
 }
 
 model CandidateProfile {
-  profileId         String   @id
+  id                String   @id @default(uuid())
+  profileId         String
   name              String
   firstName         String
   lastName          String
@@ -55,22 +79,47 @@ model CandidateProfile {
   profile        Profile          @relation(fields: [profileId], references: [id], onDelete: Cascade)
   workExperience WorkExperience[]
   techStack      TechStack[]
-  documents      Document[]
+  agent          Agent?           @relation("CandidateAgent")
+  tokens         Token[]
+  accessLogs     TokenAccessLog[]
 }
 
 model CompanyProfile {
-  profileId    String      @id
+  id           String   @id @default(uuid())
+  profileId    String
   name         String
   companyName  String
   description  String?
   logoUrl      String?
   services     String[]
-  techStack    TechStack[]
   teamSize     Int
   contactEmail String
   contactPhone String?
 
-  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profile    Profile          @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  techStack  TechStack[]
+  agent      Agent?           @relation("CompanyAgent")
+  tokens     Token[]
+  accessLogs TokenAccessLog[]
+}
+
+model Agent {
+  id                 String        @id @default(uuid())
+  candidateProfileId String?       @unique
+  companyProfileId   String?       @unique
+  language           String?
+  style              AgentStyle?
+  tone               AgentTone?
+  answerLength       AnswerLength?
+  introPrompt        String?
+  disclaimerText     String?
+  customInstructions String?
+  name               String?
+
+  candidateProfile CandidateProfile? @relation("CandidateAgent", fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  companyProfile   CompanyProfile?   @relation("CompanyAgent", fields: [companyProfileId], references: [id], onDelete: Cascade)
+  documents        Document[]        @relation("AgentDocuments")
+  chatLogs         ChatLog[]
 }
 
 model WorkExperience {
@@ -78,9 +127,9 @@ model WorkExperience {
   candidateProfileId String
   position           String
   company            String
-  years              String
+  years              Int
 
-  candidateProfile CandidateProfile @relation(fields: [candidateProfileId], references: [profileId], onDelete: Cascade)
+  candidateProfile CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
 }
 
 model TechStack {
@@ -90,69 +139,65 @@ model TechStack {
   category           String
   name               String
 
-  candidateProfile CandidateProfile? @relation(fields: [candidateProfileId], references: [profileId], onDelete: Cascade)
-  companyProfile   CompanyProfile?   @relation(fields: [companyProfileId], references: [profileId], onDelete: Cascade)
+  candidateProfile CandidateProfile? @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  companyProfile   CompanyProfile?   @relation(fields: [companyProfileId], references: [id], onDelete: Cascade)
 }
 
 model Document {
-  id                 String   @id @default(uuid())
-  candidateProfileId String
-  title              String
-  content            String
-  createdAt          DateTime @default(now())
+  id        String   @id @default(uuid())
+  profileId String
+  title     String
+  content   String
+  createdAt DateTime @default(now())
 
-  candidateProfile CandidateProfile @relation(fields: [candidateProfileId], references: [profileId], onDelete: Cascade)
+  profile Profile @relation("ProfileDocuments", fields: [profileId], references: [id], onDelete: Cascade)
+  agents  Agent[] @relation("AgentDocuments")
 }
 
 model Token {
-  id            String   @id @default(uuid())
-  name          String
-  token         String   @unique
-  profileId     String
-  createdById   String
-  userId        String?       // optional: client user who received this token
-  type          String        // "one-time" | "user-bound" | "time-limited"
-  used          Boolean  @default(false)
-  expiresAt     DateTime?
-  createdAt     DateTime @default(now())
-  wasStoredInRedis Boolean @default(false)
+  id               String    @id @default(uuid())
+  name             String
+  token            String    @unique
+  type             TokenType
+  used             Boolean   @default(false)
+  expiresAt        DateTime?
+  createdAt        DateTime  @default(now())
+  wasStoredInRedis Boolean   @default(false)
+  createdById      String
+  userId           String?
 
-  profile       Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  createdBy     User     @relation("TokenCreator", fields: [createdById], references: [id])
-  user          User?    @relation("TokenUser", fields: [userId], references: [id])
+  candidateProfileId String?
+  companyProfileId   String?
 
-  accessLogs    TokenAccessLog[]
+  candidateProfile CandidateProfile? @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  companyProfile   CompanyProfile?   @relation(fields: [companyProfileId], references: [id], onDelete: Cascade)
+
+  createdBy User  @relation("TokenCreator", fields: [createdById], references: [id])
+  user      User? @relation("TokenReceiver", fields: [userId], references: [id])
+
+  accessLogs TokenAccessLog[]
 }
 
 model TokenAccessLog {
-  id         String   @id @default(uuid())
-  tokenId    String
-  userId     String?           // null if anonymous
-  profileId  String
-  accessedAt DateTime @default(now())
+  id                 String   @id @default(uuid())
+  tokenId            String
+  userId             String?
+  candidateProfileId String?
+  companyProfileId   String?
+  accessedAt         DateTime @default(now())
 
-  token      Token    @relation(fields: [tokenId], references: [id], onDelete: Cascade)
-  user       User?    @relation(fields: [userId], references: [id])
-  profile    Profile  @relation(fields: [profileId], references: [id])
-}
-
-model BotPersona {
-  id          String  @id @default(uuid())
-  profileId   String  @unique
-  style       String? // 'formal', 'casual', etc.
-  language    String? // 'en', 'pl', etc.
-  introPrompt String?
-
-  profile  Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  chatLogs ChatLog[]
+  token            Token             @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+  user             User?             @relation(fields: [userId], references: [id])
+  candidateProfile CandidateProfile? @relation(fields: [candidateProfileId], references: [id])
+  companyProfile   CompanyProfile?   @relation(fields: [companyProfileId], references: [id])
 }
 
 model ChatLog {
-  id           String   @id @default(uuid())
-  botPersonaId String
-  message      String
-  sender       String // 'bot' | 'recruiter'
-  timestamp    DateTime @default(now())
+  id        String   @id @default(uuid())
+  agentId   String
+  message   String
+  sender    String
+  timestamp DateTime @default(now())
 
-  botPersona BotPersona @relation(fields: [botPersonaId], references: [id], onDelete: Cascade)
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
 }
