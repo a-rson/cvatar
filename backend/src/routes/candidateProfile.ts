@@ -1,37 +1,43 @@
 import { FastifyInstance } from "fastify";
 import { prisma } from "../lib";
 import { verifyJWT, requireProvider } from "../middleware";
+import { candidateProfileSchema } from "../schema";
 
 export async function candidateProfileRoutes(server: FastifyInstance) {
   server.post(
     "/candidate-profile",
-    { preHandler: [verifyJWT, requireProvider] },
+    {
+      preHandler: [verifyJWT, requireProvider],
+    },
     async (request, reply) => {
-      const user = request.user;
+      const data = await request.parts();
 
-      if (!user) {
-        return reply.status(500).send({ error: "Internal server error" });
+      const fields: Record<string, any> = {};
+      let avatarFile: any = null;
+
+      for await (const part of data) {
+        if (part.type === "file" && part.fieldname === "avatar") {
+          avatarFile = part;
+        } else if (part.type === "field") {
+          fields[part.fieldname] = part.value;
+        }
       }
 
-      // const existingProfile = await prisma.profile.findFirst({
-      //   where: { userId: user.id },
-      //   include: {
-      //     candidate: true,
-      //     company: true,
-      //   },
-      // });
+      // Parse fields like arrays/numbers from strings
+      const parsedData = {
+        ...fields,
+        education: fields.education?.split(",") ?? [],
+        spokenLanguages: fields.spokenLanguages?.split(",") ?? [],
+        softSkills: fields.softSkills?.split(",") ?? [],
+        yearsOfExperience: parseInt(fields.yearsOfExperience),
+      };
 
-      // if (existingProfile?.candidate) {
-      //   return reply
-      //     .status(400)
-      //     .send({ error: "Candidate profile already exists." });
-      // }
-
-      // if (existingProfile?.company) {
-      //   return reply.status(400).send({
-      //     error: "Cannot create candidate profile when company profile exists.",
-      //   });
-      // }
+      const parsed = candidateProfileSchema.safeParse(parsedData);
+      if (!parsed.success) {
+        return reply
+          .status(400)
+          .send({ error: "Invalid input", details: parsed.error.flatten() });
+      }
 
       const {
         name,
@@ -43,63 +49,45 @@ export async function candidateProfileRoutes(server: FastifyInstance) {
         spokenLanguages,
         yearsOfExperience,
         softSkills,
-        avatarUrl,
-        workExperience = [],
-        techStack = { languages: [], frameworks: [], tools: [] },
-      } = request.body as any;
+      } = parsed.data;
 
-      const createdProfile = await prisma.profile.create({
+      const avatarBuffer = avatarFile ? await avatarFile.toBuffer() : null;
+
+      let avatarUrl: string | null = null;
+
+      if (avatarBuffer) {
+        const fileName = `avatar-${Date.now()}.${avatarFile.filename
+          .split(".")
+          .pop()}`;
+        const fs = await import("fs/promises");
+        const path = `./public/uploads/${fileName}`;
+        await fs.writeFile(path, avatarBuffer);
+        avatarUrl = `/uploads/${fileName}`;
+      }
+
+      const profile = await prisma.profile.upsert({
+        where: { userId: request.user!.id },
+        update: {},
+        create: { user: { connect: { id: request.user!.id } } },
+      });
+
+      const createdCandidate = await prisma.candidateProfile.create({
         data: {
-          user: { connect: { id: user.id } },
-          candidate: {
-            create: {
-              name,
-              firstName,
-              lastName,
-              description,
-              maritalStatus,
-              education,
-              spokenLanguages,
-              yearsOfExperience,
-              softSkills,
-              avatarUrl,
-              workExperience: {
-                create: workExperience.map((item: any) => ({
-                  position: item.position,
-                  company: item.company,
-                  years: item.years,
-                })),
-              },
-              techStack: {
-                create: [
-                  ...techStack.languages.map((name: string) => ({
-                    category: "language",
-                    name,
-                  })),
-                  ...techStack.frameworks.map((name: string) => ({
-                    category: "framework",
-                    name,
-                  })),
-                  ...techStack.tools.map((name: string) => ({
-                    category: "tool",
-                    name,
-                  })),
-                ],
-              },
-            },
-          },
-        },
-        include: {
-          candidate: {
-            include: {
-              workExperience: true,
-              techStack: true,
-            },
-          },
+          profileId: profile.id,
+          name,
+          firstName,
+          lastName,
+          description,
+          maritalStatus,
+          education,
+          spokenLanguages,
+          yearsOfExperience,
+          softSkills,
+          avatarUrl: avatarUrl || undefined,
         },
       });
 
-      reply.code(201).send(createdProfile);
+      return reply.code(201).send(createdCandidate);
     }
   );
 }

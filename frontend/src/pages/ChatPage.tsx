@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AppLayout, Button } from "@/components";
-import { getMyProfile, sendChatMessage } from "@/lib";
+import { getMySubProfile, sendChatMessage } from "@/lib";
 
 export default function ChatPage() {
-  const { profileId } = useParams();
-  const [profile, setProfile] = useState<any>(null);
+  const { subProfileId } = useParams();
+  const [subProfile, setSubProfile] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
   const [isOwner, setIsOwner] = useState(false);
@@ -15,26 +15,25 @@ export default function ChatPage() {
   useEffect(() => {
     async function fetchProfile() {
       try {
-        const profileData = await getMyProfile(profileId!);
-        setProfile(profileData);
+        const subProfileData = await getMySubProfile(subProfileId!);
+        setSubProfile(subProfileData);
         setIsOwner(true);
       } catch (err: any) {
-        console.error("Not authorized to view this profile.", err);
+        console.error("Not authorized to view this sub-profile.", err);
       }
     }
 
     fetchProfile();
-  }, [profileId]);
+  }, [subProfileId]);
 
   async function handleSend() {
     if (!input.trim()) return;
     try {
-      console.log(profileId, input);
-      const response = await sendChatMessage(profileId!, input);
+      const response = await sendChatMessage(subProfileId!, input);
       setMessages((prev) => [
         ...prev,
         { role: "client", content: input },
-        { role: "bot", content: response },
+        { role: "agent", content: response },
       ]);
       setInput("");
     } catch (err) {
@@ -49,22 +48,20 @@ export default function ChatPage() {
         <div className="md:w-1/3 w-full space-y-4">
           <div className="bg-white rounded shadow p-4 text-center">
             <img
-              src={profile?.candidate?.avatarUrl || "/default-avatar.png"}
+              src={subProfile?.avatarUrl || "/default-avatar.png"}
               alt="Avatar"
               className="w-32 h-32 rounded-full object-cover mx-auto mb-2"
             />
             <h2 className="text-lg font-semibold">
-              {profile?.candidate?.firstName} {profile?.candidate?.lastName}
+              {subProfile?.firstName} {subProfile?.lastName}
             </h2>
-            <p className="text-sm text-gray-600">
-              {profile?.candidate?.description}
-            </p>
+            <p className="text-sm text-gray-600">{subProfile?.description}</p>
           </div>
 
           {isOwner ? (
             <div className="bg-white rounded shadow p-4 space-y-2">
               <Button
-                onClick={() => navigate(`/edit-profile/${profileId}`)}
+                onClick={() => navigate(`/edit-sub-profile/${subProfile}`)}
                 variant="outline"
               >
                 Edit Profile

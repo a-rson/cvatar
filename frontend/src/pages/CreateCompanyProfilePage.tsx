@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout, Button } from "@/components";
-import { createTypedProfile } from "@/lib";
+import { createTypedSubProfile } from "@/lib";
 
 export default function CreateCompanyProfilePage() {
   const navigate = useNavigate();
@@ -30,7 +30,7 @@ export default function CreateCompanyProfilePage() {
     setError("");
 
     try {
-      await createTypedProfile("company", {
+      await createTypedSubProfile("company", {
         ...form,
         services: form.services.split(","),
         techStack: form.techStack.split(","),

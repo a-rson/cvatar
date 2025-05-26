@@ -1,5 +1,5 @@
 import { axios } from "./axios";
-import { AuthCredentials, AuthResponse } from "@/types";
+import { AuthCredentials, AuthResponse, AgentData } from "@/types";
 
 export async function login(data: AuthCredentials): Promise<string> {
   const res = await axios.post<AuthResponse>("/auth/login", data);
@@ -23,7 +23,7 @@ export async function getMe() {
   return res.data;
 }
 
-export async function createTypedProfile(
+export async function createTypedSubProfile(
   profileType: "candidate" | "company",
   data: any
 ) {
@@ -36,9 +36,9 @@ export async function createTypedProfile(
   });
 }
 
-export async function getMyProfiles() {
+export async function getMySubProfiles() {
   const token = localStorage.getItem("token");
-  const res = await axios.get("/me/profiles", {
+  const res = await axios.get("/me/subProfiles", {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
@@ -52,8 +52,8 @@ export async function getMyTokens() {
   return res.data;
 }
 
-export async function createTokenForProfile(
-  profileId: string,
+export async function createTokenForSubProfile(
+  subProfileId: string,
   options?: {
     name?: string;
     expiresIn?: number;
@@ -66,7 +66,7 @@ export async function createTokenForProfile(
   const res = await axios.post(
     "/token",
     {
-      profileId,
+      subProfileId,
       name: options?.name ?? "Unnamed Token",
       expiresIn: options?.expiresIn ?? 60 * 60 * 24 * 7, // default: 7 days
       isOneTime: options?.isOneTime ?? true,
@@ -76,7 +76,7 @@ export async function createTokenForProfile(
     }
   );
 
-  return res.data; // includes token, qrUrl, qrImage
+  return res.data;
 }
 
 export async function deleteToken(id: string) {
@@ -88,9 +88,9 @@ export async function deleteToken(id: string) {
   });
 }
 
-export async function getMyProfile(profileId: string) {
+export async function getMySubProfile(subProfileId: string) {
   const token = localStorage.getItem("token");
-  const res = await axios.get(`/me/profile/${profileId}`, {
+  const res = await axios.get(`/me/sub-profile/${subProfileId}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -98,32 +98,43 @@ export async function getMyProfile(profileId: string) {
   return res.data;
 }
 
-export async function deleteProfile(profileId: string) {
+export async function updateSubProfile(subProfileId: string, data: any) {
   const token = localStorage.getItem("token");
-  return await axios.delete(`/profile/${profileId}`, {
+  const res = await axios.patch(
+    `/me/sub-profile/${subProfileId}`,
+    data,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return res.data;
+}
+
+
+export async function deleteSubProfile(subProfileId: string) {
+  const token = localStorage.getItem("token");
+  return await axios.delete(`/me/sub-profile/${subProfileId}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
 }
 
-export async function updateBotPersona(
-  profileId: string,
-  data: {
-    language: string;
-    style: string;
-    introPrompt: string;
-  }
-) {
+export async function updateAgent(subProfileId: string, data: AgentData) {
   const token = localStorage.getItem("token");
-  const res = await axios.patch(`/bot-persona/${profileId}`, data, {
-    headers: { Authorization: `Bearer ${token}` },
+
+  const res = await axios.patch(`/agent/${subProfileId}`, data, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   });
   return res.data;
 }
 
 export async function sendChatMessage(
-  profileId: string,
+  subProfileId: string,
   message: string
 ): Promise<string> {
   const token = localStorage.getItem("token");
@@ -133,7 +144,10 @@ export async function sendChatMessage(
     ? { Authorization: `Bearer ${token}` }
     : { "authorization-token": accessToken ?? "" };
 
-  const res = await axios.post(`/chat/${profileId}`, { message }, { headers });
-  console.log(res);
+  const res = await axios.post(
+    `/chat/${subProfileId}`,
+    { message },
+    { headers }
+  );
   return res.data.response;
 }

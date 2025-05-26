@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { prisma } from "../lib";
 import { verifyJWT, requireAdmin } from "../middleware";
+import { UserType } from "../types";
 
 export async function adminRoutes(server: FastifyInstance) {
   server.get(
@@ -45,7 +46,7 @@ export async function adminRoutes(server: FastifyInstance) {
     { preHandler: [verifyJWT, requireAdmin] },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const data = request.body as { email?: string; type?: string };
+      const data = request.body as UserType;
 
       try {
         const updated = await prisma.user.update({
@@ -65,7 +66,12 @@ export async function adminRoutes(server: FastifyInstance) {
     async () => {
       const logs = await prisma.tokenAccessLog.findMany({
         orderBy: { accessedAt: "desc" },
-        include: { token: true, user: true, profile: true },
+        include: {
+          token: true,
+          user: true,
+          candidateProfile: true,
+          companyProfile: true,
+        },
       });
       return logs;
     }

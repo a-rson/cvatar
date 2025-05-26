@@ -4,6 +4,6 @@ export * from "./admin";
 export * from "./token";
 export * from "./profile";
 export * from "./chat";
-export * from "./botPersona";
+export * from "./agent";
 export * from "./companyProfile";
 export * from "./candidateProfile";
