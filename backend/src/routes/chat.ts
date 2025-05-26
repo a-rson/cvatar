@@ -3,6 +3,7 @@ import { redis, prisma } from "../lib";
 import { verifyJWT } from "../middleware";
 import { buildPrompt } from "../utils";
 import { OpenAI } from "openai";
+import { getSubProfileById } from "../utils";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
@@ -31,33 +32,19 @@ export async function chatRoutes(server: FastifyInstance) {
         | string
         | undefined;
 
-      const subProfile =
-        profileType === "candidate"
-          ? await prisma.candidateProfile.findUnique({
-              where: { id: subProfileId },
-              include: {
-                agent: {
-                  include: {
-                    documents: true,
-                  },
-                },
-                workExperience: true,
-                techStack: true,
-                profile: true,
-              },
-            })
-          : await prisma.companyProfile.findUnique({
-              where: { id: subProfileId },
-              include: {
-                agent: {
-                  include: {
-                    documents: true,
-                  },
-                },
-                techStack: true,
-                profile: true,
-              },
-            });
+      const getSubProfileResult = await getSubProfileById(
+        subProfileId,
+        profileType,
+        {
+          includeProfile: true,
+        }
+      );
+
+      if (!getSubProfileResult) {
+        return reply.status(404).send({ error: "Sub-profile not found." });
+      }
+
+      const { subProfile } = getSubProfileResult;
 
       if (!subProfile) {
         return reply.status(404).send({ error: "Sub-profile not found." });
