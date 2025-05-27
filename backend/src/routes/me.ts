@@ -1,29 +1,11 @@
 import { FastifyInstance } from "fastify";
 import { verifyJWT } from "../middleware";
 import { prisma } from "../lib";
-
-type UpdateCandidateProfileDTO = {
-  name: string;
-  firstName: string;
-  lastName: string;
-  description: string;
-  maritalStatus: string;
-  education: string[];
-  spokenLanguages: string[];
-  yearsOfExperience: number;
-  softSkills: string[];
-};
-
-type UpdateCompanyProfileDTO = {
-  name: string;
-  companyName: string;
-  description: string;
-  logoUrl?: string;
-  services: string[];
-  teamSize: number;
-  contactEmail: string;
-  contactPhone?: string;
-};
+import {
+  updateCandidateProfileSchema,
+  updateCompanyProfileSchema,
+} from "../schema";
+import { getSubProfileById } from "../utils";
 
 export async function meRoutes(server: FastifyInstance) {
   server.get("/me", { preHandler: [verifyJWT] }, async (request, reply) => {
@@ -42,7 +24,7 @@ export async function meRoutes(server: FastifyInstance) {
   });
 
   server.get(
-    "/me/subProfiles",
+    "/me/sub-profiles",
     { preHandler: [verifyJWT] },
     async (request) => {
       const subProfiles = await prisma.profile.findMany({
@@ -81,88 +63,46 @@ export async function meRoutes(server: FastifyInstance) {
       const user = request.user!;
       const body = request.body;
 
-      console.log("REQUEST BODY: ", body);
+      const result = await getSubProfileById(id, { includeProfile: true });
 
-      const candidate = await prisma.candidateProfile.findUnique({
-        where: { id },
-        include: { profile: true },
-      });
+      if (!result) {
+        return reply.status(404).send({ error: "Sub-profile not found." });
+      }
 
-      if (candidate) {
-        if (candidate.profile.userId !== user.id) {
-          return reply.status(403).send({ error: "Unauthorized" });
+      const { subProfile, type } = result;
+
+      if (subProfile.profile.userId !== user.id) {
+        return reply.status(403).send({ error: "Forbidden" });
+      }
+
+      if (type === "candidate") {
+        const parsed = updateCandidateProfileSchema.safeParse(body);
+        if (!parsed.success) {
+          return reply
+            .status(400)
+            .send({ error: "Invalid input", details: parsed.error.flatten() });
         }
-
-        const {
-          name,
-          firstName,
-          lastName,
-          description,
-          maritalStatus,
-          education,
-          spokenLanguages,
-          yearsOfExperience,
-          softSkills,
-        } = body as UpdateCandidateProfileDTO;
 
         const updated = await prisma.candidateProfile.update({
           where: { id },
-          data: {
-            name,
-            firstName,
-            lastName,
-            description,
-            maritalStatus,
-            education,
-            spokenLanguages,
-            yearsOfExperience,
-            softSkills,
-          },
+          data: parsed.data,
         });
 
         return reply.send(updated);
       }
+      const parsed = updateCompanyProfileSchema.safeParse(body);
+      if (!parsed.success) {
+        return reply
+          .status(400)
+          .send({ error: "Invalid input", details: parsed.error.flatten() });
+      }
 
-      // Try company
-      const company = await prisma.companyProfile.findUnique({
+      const updated = await prisma.companyProfile.update({
         where: { id },
-        include: { profile: true },
+        data: parsed.data,
       });
 
-      if (company) {
-        if (company.profile.userId !== user.id) {
-          return reply.status(403).send({ error: "Unauthorized" });
-        }
-
-        const {
-          name,
-          companyName,
-          description,
-          logoUrl,
-          services,
-          teamSize,
-          contactEmail,
-          contactPhone,
-        } = body as UpdateCompanyProfileDTO;
-
-        const updated = await prisma.companyProfile.update({
-          where: { id },
-          data: {
-            name,
-            companyName,
-            description,
-            logoUrl,
-            services,
-            teamSize,
-            contactEmail,
-            contactPhone,
-          },
-        });
-
-        return reply.send(updated);
-      }
-
-      return reply.status(404).send({ error: "Sub-profile not found." });
+      return reply.send(updated);
     }
   );
 
@@ -194,50 +134,30 @@ export async function meRoutes(server: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user!;
 
-      // Try candidate profile
-      const candidate = await prisma.candidateProfile.findUnique({
-        where: { id },
-        include: {
-          workExperience: true,
-          techStack: true,
-          agent: true,
-          profile: {
-            include: { documents: true },
-          },
-        },
-      });
+      const result = await getSubProfileById(id, { includeProfile: true });
 
-      if (candidate && candidate.profile.userId === user.id) {
+      if (!result) {
+        return reply.status(404).send({ error: "Sub-profile not found." });
+      }
+
+      const { subProfile, type } = result;
+
+      if (subProfile.profile.userId !== user.id) {
+        return reply.status(403).send({ error: "Forbidden" });
+      }
+
+      if (type === "candidate") {
         return reply.send({
           profileType: "Candidate",
-          documents: candidate.profile.documents,
-          ...candidate,
+          documents: subProfile.profile.documents,
+          ...subProfile,
         });
       }
-
-      // Try company profile
-      const company = await prisma.companyProfile.findUnique({
-        where: { id },
-        include: {
-          techStack: true,
-          agent: true,
-          profile: {
-            include: { documents: true },
-          },
-        },
+      return reply.send({
+        profileType: "Company",
+        documents: subProfile.profile.documents,
+        ...subProfile,
       });
-
-      if (company && company.profile.userId === user.id) {
-        return reply.send({
-          profileType: "Company",
-          documents: company.profile.documents,
-          ...company,
-        });
-      }
-
-      return reply
-        .status(403)
-        .send({ error: "Forbidden. You do not own this profile." });
     }
   );
 
@@ -248,27 +168,25 @@ export async function meRoutes(server: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user!;
 
-      const candidate = await prisma.candidateProfile.findUnique({
-        where: { id },
-        include: { profile: true },
-      });
+      const result = await getSubProfileById(id, { includeProfile: true });
 
-      if (candidate && candidate.profile.userId === user.id) {
+      if (!result) {
+        return reply.status(404).send({ error: "Sub-profile not found." });
+      }
+
+      const { subProfile, type } = result;
+
+      if (subProfile.profile.userId !== user.id) {
+        return reply.status(403).send({ error: "Forbidden" });
+      }
+
+      if (type === "candidate") {
         await prisma.candidateProfile.delete({ where: { id } });
-        return reply.send({ success: true, type: "candidate" });
+        return reply.send({ success: true, type: "Candidate" });
       }
 
-      const company = await prisma.companyProfile.findUnique({
-        where: { id },
-        include: { profile: true },
-      });
-
-      if (company && company.profile.userId === user.id) {
-        await prisma.companyProfile.delete({ where: { id } });
-        return reply.send({ success: true, type: "company" });
-      }
-
-      return reply.status(403).send({ error: "Forbidden or not found." });
+      await prisma.companyProfile.delete({ where: { id } });
+      return reply.send({ success: true, type: "Company" });
     }
   );
 }

@@ -4,24 +4,24 @@ import { redis, generateQRCodeUrl, prisma } from "../lib";
 import { config } from "../config";
 import { verifyJWT } from "../middleware";
 import { Token } from "@prisma/client";
-
-interface TokenRequest {
-  subprofileId: string;
-  profileType: "candidate" | "company";
-  name: string;
-  expiresIn: number; // sec
-  isOneTime: boolean;
-}
+import { TokenRequestSchema } from "../schema";
 
 export async function tokenRoutes(server: FastifyInstance) {
   server.post("/token", { preHandler: [verifyJWT] }, async (request, reply) => {
+    const parsed = TokenRequestSchema.safeParse(request.body);
+
+    if (!parsed.success) {
+      return reply
+        .status(400)
+        .send({ error: "Invalid input", details: parsed.error.flatten() });
+    }
+
     const { subprofileId, profileType, name, expiresIn, isOneTime } =
-      request.body as TokenRequest;
+      parsed.data;
 
     const tokenValue = uuidv4();
     const userId = request.user!.id;
 
-    // Save to Redis
     await redis.set(
       `token:${tokenValue}`,
       JSON.stringify({
@@ -35,7 +35,6 @@ export async function tokenRoutes(server: FastifyInstance) {
       expiresIn
     );
 
-    // Build data object for Prisma
     const tokenData: any = {
       token: tokenValue,
       name,
