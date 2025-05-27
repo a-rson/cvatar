@@ -38,7 +38,7 @@ export async function createTypedSubProfile(
 
 export async function getMySubProfiles() {
   const token = localStorage.getItem("token");
-  const res = await axios.get("/me/subProfiles", {
+  const res = await axios.get("/me/sub-profiles", {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
@@ -100,18 +100,13 @@ export async function getMySubProfile(subProfileId: string) {
 
 export async function updateSubProfile(subProfileId: string, data: any) {
   const token = localStorage.getItem("token");
-  const res = await axios.patch(
-    `/me/sub-profile/${subProfileId}`,
-    data,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const res = await axios.patch(`/me/sub-profile/${subProfileId}`, data, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
   return res.data;
 }
-
 
 export async function deleteSubProfile(subProfileId: string) {
   const token = localStorage.getItem("token");
@@ -133,10 +128,15 @@ export async function updateAgent(subProfileId: string, data: AgentData) {
   return res.data;
 }
 
-export async function sendChatMessage(
-  subProfileId: string,
-  message: string
-): Promise<string> {
+export async function sendChatMessage({
+  subProfileId,
+  message,
+  profileType,
+}: {
+  subProfileId: string;
+  message: string;
+  profileType: string;
+}): Promise<string> {
   const token = localStorage.getItem("token");
   const accessToken = localStorage.getItem("access-token");
 
@@ -145,9 +145,44 @@ export async function sendChatMessage(
     : { "authorization-token": accessToken ?? "" };
 
   const res = await axios.post(
-    `/chat/${subProfileId}`,
+    `/chat/${subProfileId}?profileType=${profileType}`,
     { message },
     { headers }
   );
   return res.data.response;
+}
+
+export async function deleteDocument(docId: string) {
+  const token = localStorage.getItem("token");
+  return await axios.delete(`/document/${docId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function createDocument(title: string, content: string) {
+  const token = localStorage.getItem("token");
+  const res = await axios.post(
+    "/document",
+    { title, content },
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  return res.data;
+}
+
+export async function uploadDocument(file: File) {
+  const token = localStorage.getItem("token");
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await axios.post("/document/upload", formData, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return res.data;
 }

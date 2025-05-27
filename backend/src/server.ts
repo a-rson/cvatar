@@ -9,6 +9,7 @@ import {
   meRoutes,
   agentRoutes,
   chatRoutes,
+  documentRoutes,
 } from "./routes";
 import { loggerOptions, logger } from "./lib";
 import { config } from "./config";
@@ -48,6 +49,7 @@ server.register(chatRoutes);
 server.register(agentRoutes);
 server.register(candidateProfileRoutes);
 server.register(companyProfileRoutes);
+server.register(documentRoutes);
 
 server.addHook("onRequest", async (request) => {
   request.log.info(
