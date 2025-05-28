@@ -8,15 +8,16 @@ import {
   uploadDocument,
   deleteDocument,
 } from "@/lib";
-import { AgentData, CandidateProfileData } from "@/types";
 import {
   AppLayout,
   CandidateProfileForm,
+  CompanyProfileForm,
   AgentForm,
   DocumentManager,
 } from "@/components";
+import { AgentData, CandidateProfileData, CompanyProfileData } from "@/types";
 
-const DEFAULT_SUB_PROFILE_FORM: CandidateProfileData = {
+const DEFAULT_CANDIDATE_FORM: CandidateProfileData = {
   name: "",
   firstName: "",
   lastName: "",
@@ -32,6 +33,22 @@ const DEFAULT_SUB_PROFILE_FORM: CandidateProfileData = {
   profileType: "Candidate",
 };
 
+const DEFAULT_COMPANY_FORM: CompanyProfileData = {
+  name: "",
+  companyName: "",
+  description: "",
+  logoUrl: "",
+  services: "",
+  languages: "",
+  frameworks: "",
+  tools: "",
+  teamSize: "0",
+  contactEmail: "",
+  contactPhone: "",
+  documents: [],
+  profileType: "Company",
+};
+
 const DEFAULT_AGENT_FORM: AgentData = {
   name: "",
   language: "en",
@@ -44,16 +61,14 @@ const DEFAULT_AGENT_FORM: AgentData = {
   profileType: "candidate",
 };
 
-export default function EditProfilePage() {
+export default function EditSubProfilePage() {
+  const { subProfileId } = useParams<{ subProfileId: string }>();
   const [activeTab, setActiveTab] = useState<"general" | "agent" | "documents">(
     "general"
   );
-  const { subProfileId } = useParams<{ subProfileId: string }>();
 
-  const [subProfileForm, setSubProfileForm] =
-    useState<CandidateProfileData | null>(null);
+  const [subProfileForm, setSubProfileForm] = useState<any>(null);
   const [agentForm, setAgentForm] = useState<AgentData | null>(null);
-  // const [savingSubProfile, setSavingSubProfile] = useState(false);
   const [savingAgent, setSavingAgent] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -61,19 +76,21 @@ export default function EditProfilePage() {
   useEffect(() => {
     async function load() {
       try {
-        const subProfileData = await getMySubProfile(subProfileId!);
-        setSubProfileForm({ ...DEFAULT_SUB_PROFILE_FORM, ...subProfileData });
+        const subProfile = await getMySubProfile(subProfileId!);
 
-        const agentData = subProfileData.agent || {};
+        setSubProfileForm(
+          subProfile.profileType === "Candidate"
+            ? { ...DEFAULT_CANDIDATE_FORM, ...subProfile }
+            : { ...DEFAULT_COMPANY_FORM, ...subProfile }
+        );
+
+        const agentData = subProfile.agent || {};
         setAgentForm({
           ...DEFAULT_AGENT_FORM,
           ...agentData,
-          profileType:
-            subProfileData.profileType === "Candidate"
-              ? "candidate"
-              : "company",
+          profileType: subProfile.profileType.toLowerCase(),
         });
-      } catch (err) {
+      } catch {
         setError("Failed to load profile or unauthorized.");
       }
     }
@@ -82,7 +99,7 @@ export default function EditProfilePage() {
   }, [subProfileId]);
 
   const handleAgentChange = (field: string, value: string) => {
-    setAgentForm((prev) => (prev ? { ...prev, [field]: value } : prev));
+    if (agentForm) setAgentForm({ ...agentForm, [field]: value });
     setSuccess("");
   };
 
@@ -108,15 +125,13 @@ export default function EditProfilePage() {
       setError("");
     } catch {
       setError("Failed to save Profile.");
-    } finally {
-      // setSavingSubProfile(false);
     }
   };
 
   const handleUploadDocument = async (file: File) => {
     try {
       const newDoc = await uploadDocument(file);
-      setSubProfileForm((prev) =>
+      setSubProfileForm((prev: any) =>
         prev
           ? { ...prev, documents: [...(prev.documents || []), newDoc] }
           : prev
@@ -129,7 +144,7 @@ export default function EditProfilePage() {
   const handleCreateDocument = async (title: string, content: string) => {
     try {
       const newDoc = await createDocument(title, content);
-      setSubProfileForm((prev) =>
+      setSubProfileForm((prev: any) =>
         prev
           ? { ...prev, documents: [...(prev.documents || []), newDoc] }
           : prev
@@ -142,11 +157,11 @@ export default function EditProfilePage() {
   const handleDeleteDocument = async (docId: string) => {
     try {
       await deleteDocument(docId);
-      setSubProfileForm((prev) =>
+      setSubProfileForm((prev: any) =>
         prev
           ? {
               ...prev,
-              documents: prev.documents?.filter((d) => d.id !== docId),
+              documents: prev.documents?.filter((d: any) => d.id !== docId),
             }
           : prev
       );
@@ -177,42 +192,52 @@ export default function EditProfilePage() {
           ))}
         </div>
 
-        {/* GENERAL PROFILE FORM */}
+        {/* GENERAL TAB */}
         {activeTab === "general" &&
           subProfileForm?.profileType === "Candidate" && (
+            <CandidateProfileForm
+              initialValues={subProfileForm}
+              onSubmit={handleSaveSubProfile}
+            />
+          )}
+
+        {activeTab === "general" &&
+          subProfileForm?.profileType === "Company" && (
             <>
-              {subProfileForm.avatarUrl && (
+              {subProfileForm.logoUrl && (
                 <div className="mb-4">
                   <p className="text-sm text-gray-600 mb-1">
-                    Current Profile Picture:
+                    Current Logo Preview:
                   </p>
                   <img
-                    src={subProfileForm.avatarUrl}
-                    alt="Avatar"
-                    className="h-24 w-24 rounded-full object-cover border"
+                    src={subProfileForm.logoUrl}
+                    alt="Logo"
+                    className="h-24 w-24 object-contain border bg-white p-1"
                   />
                 </div>
               )}
-              <CandidateProfileForm
+              <CompanyProfileForm
                 initialValues={{
                   name: subProfileForm.name,
-                  firstName: subProfileForm.firstName,
-                  lastName: subProfileForm.lastName,
-                  description: subProfileForm.description,
-                  maritalStatus: subProfileForm.maritalStatus,
-                  education: subProfileForm.education,
-                  spokenLanguages: subProfileForm.spokenLanguages,
-                  yearsOfExperience:
-                    subProfileForm.yearsOfExperience.toString(),
-                  softSkills: subProfileForm.softSkills,
-                  avatar: null,
+                  companyName: subProfileForm.companyName,
+                  description: subProfileForm.description || "",
+                  logoUrl: subProfileForm.logoUrl || "",
+                  services: subProfileForm.services?.join(", ") || "",
+                  languages:
+                    subProfileForm.techStack?.languages?.join(", ") || "",
+                  frameworks:
+                    subProfileForm.techStack?.frameworks?.join(", ") || "",
+                  tools: subProfileForm.techStack?.tools?.join(", ") || "",
+                  teamSize: subProfileForm.teamSize?.toString() || "0",
+                  contactEmail: subProfileForm.contactEmail,
+                  contactPhone: subProfileForm.contactPhone || "",
                 }}
                 onSubmit={handleSaveSubProfile}
               />
             </>
           )}
 
-        {/* AGENT CONFIGURATION */}
+        {/* AGENT TAB */}
         {activeTab === "agent" && agentForm && (
           <AgentForm
             value={agentForm}
@@ -222,7 +247,7 @@ export default function EditProfilePage() {
           />
         )}
 
-        {/* DOCUMENT MANAGER */}
+        {/* DOCUMENT TAB */}
         {activeTab === "documents" && (
           <DocumentManager
             documents={subProfileForm?.documents || []}
@@ -232,7 +257,6 @@ export default function EditProfilePage() {
           />
         )}
 
-        {/* FEEDBACK */}
         {error && <p className="text-red-500">{error}</p>}
         {success && <p className="text-green-600">{success}</p>}
       </div>
