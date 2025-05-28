@@ -20,6 +20,7 @@ export default function ChatPage() {
         setIsOwner(true);
       } catch (err: any) {
         console.error("Not authorized to view this sub-profile.", err);
+        // fallback for external access (anonymous/token)
       }
     }
 
@@ -29,7 +30,19 @@ export default function ChatPage() {
   async function handleSend() {
     if (!input.trim()) return;
     try {
-      const response = await sendChatMessage(subProfileId!, input);
+      const profileType = subProfile?.profileType?.toLowerCase();
+
+      if (!profileType) {
+        console.error("Missing profileType, cannot send chat.");
+        return;
+      }
+
+      const response = await sendChatMessage({
+        subProfileId: subProfileId!,
+        message: input,
+        profileType,
+      });
+
       setMessages((prev) => [
         ...prev,
         { role: "client", content: input },
@@ -61,7 +74,7 @@ export default function ChatPage() {
           {isOwner ? (
             <div className="bg-white rounded shadow p-4 space-y-2">
               <Button
-                onClick={() => navigate(`/edit-sub-profile/${subProfile}`)}
+                onClick={() => navigate(`/edit-sub-profile/${subProfile.id}`)}
                 variant="outline"
               >
                 Edit Profile
@@ -90,10 +103,10 @@ export default function ChatPage() {
               <div
                 key={idx}
                 className={`text-sm ${
-                  msg.role === "bot" ? "text-blue-700" : "text-gray-800"
+                  msg.role === "agent" ? "text-blue-700" : "text-gray-800"
                 }`}
               >
-                <strong>{msg.role === "bot" ? "Bot:" : "You:"}</strong>{" "}
+                <strong>{msg.role === "agent" ? "Agent:" : "You:"}</strong>{" "}
                 {msg.content}
               </div>
             ))}

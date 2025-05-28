@@ -5,12 +5,14 @@ interface DocumentManagerProps {
   documents: any[];
   onUpload?: (file: File) => void;
   onCreate?: (title: string, content: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export default function DocumentManager({
   documents = [],
   onUpload,
   onCreate,
+  onDelete,
 }: DocumentManagerProps) {
   const [mode, setMode] = useState<"upload" | "create">("create");
   const [title, setTitle] = useState("");
@@ -75,7 +77,7 @@ export default function DocumentManager({
             <Button
               size="sm"
               variant="destructive"
-              onClick={() => console.log("TODO: remove doc", doc.id)}
+              onClick={() => onDelete?.(doc.id)}
             >
               Remove
             </Button>

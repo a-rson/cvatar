@@ -1,6 +1,13 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { getMySubProfile, updateAgent, updateSubProfile } from "@/lib";
+import {
+  getMySubProfile,
+  updateAgent,
+  updateSubProfile,
+  createDocument,
+  uploadDocument,
+  deleteDocument,
+} from "@/lib";
 import { AgentData, CandidateProfileData } from "@/types";
 import {
   AppLayout,
@@ -106,12 +113,46 @@ export default function EditProfilePage() {
     }
   };
 
-  const handleUpload = (file: File) => {
-    console.log("TODO: Upload file", file.name);
+  const handleUploadDocument = async (file: File) => {
+    try {
+      const newDoc = await uploadDocument(file);
+      setSubProfileForm((prev) =>
+        prev
+          ? { ...prev, documents: [...(prev.documents || []), newDoc] }
+          : prev
+      );
+    } catch {
+      setError("Failed to upload document.");
+    }
   };
 
-  const handleCreateDocument = (title: string, content: string) => {
-    console.log("TODO: Create internal document", { title, content });
+  const handleCreateDocument = async (title: string, content: string) => {
+    try {
+      const newDoc = await createDocument(title, content);
+      setSubProfileForm((prev) =>
+        prev
+          ? { ...prev, documents: [...(prev.documents || []), newDoc] }
+          : prev
+      );
+    } catch {
+      setError("Failed to create document.");
+    }
+  };
+
+  const handleDeleteDocument = async (docId: string) => {
+    try {
+      await deleteDocument(docId);
+      setSubProfileForm((prev) =>
+        prev
+          ? {
+              ...prev,
+              documents: prev.documents?.filter((d) => d.id !== docId),
+            }
+          : prev
+      );
+    } catch {
+      setError("Failed to delete document.");
+    }
   };
 
   return (
@@ -185,8 +226,9 @@ export default function EditProfilePage() {
         {activeTab === "documents" && (
           <DocumentManager
             documents={subProfileForm?.documents || []}
-            onUpload={handleUpload}
+            onUpload={handleUploadDocument}
             onCreate={handleCreateDocument}
+            onDelete={handleDeleteDocument}
           />
         )}
 
