@@ -13,3 +13,19 @@ export type CandidateProfileData = {
   documents?: any[];
   profileType?: "Candidate";
 };
+
+export type CompanyProfileData = {
+  name: string;
+  companyName: string;
+  description: string;
+  logoUrl: string;
+  services: string; // comma-separated
+  languages: string; // comma-separated
+  frameworks: string; // comma-separated
+  tools: string; // comma-separated
+  teamSize: string;
+  contactEmail: string;
+  contactPhone: string;
+  documents?: any[];
+  profileType?: "Company";
+};

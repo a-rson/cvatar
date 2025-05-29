@@ -7,11 +7,14 @@ export default function CreateCompanyProfilePage() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
+    name: "",
     companyName: "",
     description: "",
     logoUrl: "",
     services: "",
-    techStack: "",
+    languages: "",
+    frameworks: "",
+    tools: "",
     teamSize: "",
     contactEmail: "",
     contactPhone: "",
@@ -33,7 +36,20 @@ export default function CreateCompanyProfilePage() {
       await createTypedSubProfile("company", {
         ...form,
         services: form.services.split(","),
-        techStack: form.techStack.split(","),
+        techStack: {
+          languages: form.languages
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
+          frameworks: form.frameworks
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
+          tools: form.tools
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
+        },
         teamSize: parseInt(form.teamSize),
       });
       navigate("/dashboard");
@@ -51,7 +67,7 @@ export default function CreateCompanyProfilePage() {
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-4 max-w-xl">
-          <input
+            <input
               name="name"
               placeholder="Profile Name"
               className="w-full p-2 border rounded"
@@ -84,8 +100,20 @@ export default function CreateCompanyProfilePage() {
               onChange={handleChange}
             />
             <input
-              name="techStack"
-              placeholder="Tech Stack (comma-separated)"
+              name="languages"
+              placeholder="Languages (comma-separated)"
+              className="w-full p-2 border rounded"
+              onChange={handleChange}
+            />
+            <input
+              name="frameworks"
+              placeholder="Frameworks (comma-separated)"
+              className="w-full p-2 border rounded"
+              onChange={handleChange}
+            />
+            <input
+              name="tools"
+              placeholder="Tools (comma-separated)"
               className="w-full p-2 border rounded"
               onChange={handleChange}
             />
