@@ -31,81 +31,79 @@ export default function CandidateProfileForm({
     e.preventDefault();
     setError("");
 
-    const formData = new FormData();
-    for (const key in form) {
-      if (key === "avatar" && form.avatar) {
-        formData.append("avatar", form.avatar);
-      } else {
-        formData.append(key, (form as any)[key]);
-      }
-    }
-
     try {
+      const formData = new FormData();
+
+      Object.entries(form).forEach(([key, value]) => {
+        if (key === "avatar" && value instanceof File) {
+          formData.append("avatar", value);
+        } else if (Array.isArray(value)) {
+          value.forEach((item) => formData.append(key, item));
+        } else if (value !== undefined && value !== null) {
+          formData.append(key, value.toString());
+        }
+      });
+
       await onSubmit(formData);
-    } catch {
+    } catch (err) {
+      console.error(err);
       setError("Failed to save profile data.");
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {(
-        [
-          { name: "name", label: "Full Name" },
-          { name: "firstName", label: "First Name" },
-          { name: "lastName", label: "Last Name" },
-          { name: "description", label: "Profile Description" },
-          { name: "maritalStatus", label: "Marital Status" },
-          { name: "education", label: "Education (comma-separated)" },
-          {
-            name: "spokenLanguages",
-            label: "Spoken Languages (comma-separated)",
-          },
-          { name: "softSkills", label: "Soft Skills (comma-separated)" },
-          { name: "yearsOfExperience", label: "Years of Experience" },
-        ] as const
-      ).map((field) => (
-        <div key={field.name} className="flex flex-col">
-          <label htmlFor={field.name} className="font-medium text-sm mb-1">
-            {field.label}
-          </label>
-          <input
-            id={field.name}
-            name={field.name}
-            type={field.name === "yearsOfExperience" ? "number" : "text"}
-            value={form[field.name]}
-            onChange={handleChange}
-            className="w-full p-2 border rounded"
-            disabled={disabled}
-          />
+      {[
+        { name: "name", label: "Full Name" },
+        { name: "firstName", label: "First Name" },
+        { name: "lastName", label: "Last Name" },
+        { name: "maritalStatus", label: "Marital Status" },
+        { name: "yearsOfExperience", label: "Years of Experience" },
+        { name: "description", label: "Profile Description", multiline: true },
+      ].map(({ name, label, multiline }) => (
+        <div key={name}>
+          <label className="block mb-1 font-medium">{label}</label>
+          {multiline ? (
+            <textarea
+              name={name}
+              value={(form as any)[name] || ""}
+              onChange={handleChange}
+              className="w-full p-2 border rounded"
+              disabled={disabled}
+              rows={3}
+            />
+          ) : (
+            <input
+              type="text"
+              name={name}
+              value={(form as any)[name] || ""}
+              onChange={handleChange}
+              className="w-full p-2 border rounded"
+              disabled={disabled}
+            />
+          )}
         </div>
       ))}
 
-      <div className="flex flex-col">
-        <label htmlFor="avatar" className="font-medium text-sm mb-1">
-          Profile Picture
-        </label>
+      <div>
+        <label className="block mb-1 font-medium">Avatar</label>
         <input
           type="file"
-          name="avatar"
-          id="avatar"
-          accept="image/png, image/jpeg, image/webp"
+          accept="image/*"
           onChange={handleFileChange}
-          className="w-full"
           disabled={disabled}
         />
       </div>
 
-      {error && <p className="text-red-500">{error}</p>}
+      {error && <p className="text-red-600 text-sm">{error}</p>}
 
-      {!disabled && (
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-          type="submit"
-        >
-          Save Profile
-        </button>
-      )}
+      <button
+        type="submit"
+        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+        disabled={disabled}
+      >
+        Save Profile
+      </button>
     </form>
   );
 }

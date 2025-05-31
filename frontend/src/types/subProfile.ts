@@ -29,3 +29,13 @@ export type CompanyProfileData = {
   documents?: any[];
   profileType?: "Company";
 };
+
+export interface BaseSubProfile {
+  id: string;
+  name: string;
+  createdAt: string;
+  hasAgent: boolean;
+  profileType: "Candidate" | "Company";
+}
+
+export type SubProfile = BaseSubProfile & (CandidateProfileData | CompanyProfileData);

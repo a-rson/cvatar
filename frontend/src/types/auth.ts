@@ -6,3 +6,12 @@ export interface AuthCredentials {
 export interface AuthResponse {
   token: string;
 }
+
+export interface Token {
+  id: string;
+  name: string;
+  token: string;
+  type: string;
+  used: boolean;
+  expiresAt?: string;
+}

@@ -10,14 +10,16 @@ export async function authRoutes(server: FastifyInstance) {
   server.post("/auth/register", async (request, reply) => {
     const validationResult = registerSchema.safeParse(request.body);
     if (!validationResult.success) {
-      return reply.status(400).send({ error: "Invalid input" });
+      return reply.status(400).send({
+        error: "Invalid input",
+        details: validationResult.error.flatten(),
+      });
     }
     const { email, password, type } = validationResult.data;
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser)
       return reply.status(409).send({ error: "Email already registered" });
-
     const hashedPassword = await bcrypt.hash(
       password,
       config.jwtTokenSaltRounds
