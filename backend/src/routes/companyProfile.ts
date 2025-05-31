@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { prisma } from "../lib";
+import { prisma, logger } from "../lib";
 import { verifyJWT, requireProvider } from "../middleware";
 import { companyProfileSchema } from "../schema";
 
@@ -8,16 +8,13 @@ export async function companyProfileRoutes(server: FastifyInstance) {
     "/company-profile",
     { preHandler: [verifyJWT, requireProvider] },
     async (request, reply) => {
-      const user = request.user;
-      if (!user) {
-        return reply.status(500).send({ error: "Internal server error" });
-      }
-
+      const user = request.user!;
       const parsed = companyProfileSchema.safeParse(request.body);
       if (!parsed.success) {
-        return reply
-          .status(400)
-          .send({ error: "Invalid input", details: parsed.error.flatten() });
+        return reply.status(400).send({
+          error: "Invalid input",
+          details: parsed.error.flatten(),
+        });
       }
 
       const {
@@ -33,14 +30,12 @@ export async function companyProfileRoutes(server: FastifyInstance) {
       } = parsed.data;
 
       try {
-        // 1. Get or create the user's Profile
         const profile = await prisma.profile.upsert({
           where: { userId: user.id },
           update: {},
           create: { user: { connect: { id: user.id } } },
         });
 
-        // 2. Create the company subprofile
         const createdCompany = await prisma.companyProfile.create({
           data: {
             profileId: profile.id,
@@ -76,7 +71,7 @@ export async function companyProfileRoutes(server: FastifyInstance) {
 
         reply.code(201).send(createdCompany);
       } catch (error) {
-        console.error("Company profile creation failed:", error);
+        logger.error("Company profile creation failed:", error);
         reply.code(500).send({ error: "Failed to create company profile." });
       }
     }

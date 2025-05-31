@@ -36,14 +36,7 @@ export async function profileRoutes(server: FastifyInstance) {
     { preHandler: [verifyJWT] },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const user = request.user;
-
-      if (!user) {
-        logger.error(
-          "JWT verified but request.user is undefined — should not happen."
-        );
-        return reply.status(500).send({ error: "Internal server error." });
-      }
+      const user = request.user!;
 
       const profile = await prisma.profile.findUnique({ where: { id } });
 

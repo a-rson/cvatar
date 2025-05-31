@@ -22,15 +22,17 @@ export default function CreateTokenModal({
   onCreated,
 }: Props) {
   const [name, setName] = useState("");
-  const [preset, setPreset] = useState(604800); // 1 week
-  const [custom, setCustom] = useState<number>(3600); // fallback
+  const [preset, setPreset] = useState(604800);
+  const [custom, setCustom] = useState<number>(3600);
   const [isOneTime, setIsOneTime] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const expiresIn = preset === -1 ? custom : preset;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     try {
       setLoading(true);
       const tokenData = await createTokenForSubProfile(profileId, {
@@ -40,7 +42,8 @@ export default function CreateTokenModal({
       });
       onCreated(tokenData);
       onClose();
-    } catch (err) {
+    } catch (err: any) {
+      setError("Token creation failed. Please try again.");
       console.error("Token creation failed:", err);
     } finally {
       setLoading(false);
@@ -53,12 +56,11 @@ export default function CreateTokenModal({
         <button
           onClick={onClose}
           className="absolute top-3 right-3 text-gray-500 hover:text-black"
+          aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
-
         <h2 className="text-xl font-semibold mb-4">Create Access Token</h2>
-
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
@@ -68,7 +70,6 @@ export default function CreateTokenModal({
             className="w-full p-2 border rounded"
             required
           />
-
           <select
             value={preset}
             onChange={(e) => setPreset(parseInt(e.target.value))}
@@ -82,7 +83,6 @@ export default function CreateTokenModal({
               </option>
             ))}
           </select>
-
           {preset === -1 && (
             <input
               type="number"
@@ -94,7 +94,6 @@ export default function CreateTokenModal({
               required
             />
           )}
-
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -103,7 +102,7 @@ export default function CreateTokenModal({
             />
             One-time use
           </label>
-
+          {error && <p className="text-red-600 text-sm">{error}</p>}
           <Button type="submit" disabled={loading}>
             {loading ? "Creating..." : "Create Token"}
           </Button>

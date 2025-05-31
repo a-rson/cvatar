@@ -1,26 +1,40 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AppLayout, Button } from "@/components";
-import { getMySubProfile, sendChatMessage } from "@/lib";
+import { getMySubProfile, sendChatMessage } from "@/lib/api";
+import type {
+  CompanyProfileData,
+  CandidateProfileData,
+  SubProfile,
+} from "@/types/subProfile";
+
+interface ChatMessage {
+  role: "client" | "agent";
+  content: string;
+}
 
 export default function ChatPage() {
-  const { subProfileId } = useParams();
-  const [subProfile, setSubProfile] = useState<any>(null);
-  const [messages, setMessages] = useState<any[]>([]);
+  const { subProfileId } = useParams<{ subProfileId: string }>();
+  const [subProfile, setSubProfile] = useState<SubProfile | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isOwner, setIsOwner] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchProfile() {
+      setLoading(true);
       try {
         const subProfileData = await getMySubProfile(subProfileId!);
         setSubProfile(subProfileData);
         setIsOwner(true);
       } catch (err: any) {
-        console.error("Not authorized to view this sub-profile.", err);
-        // fallback for external access (anonymous/token)
+        setError("Not authorized or sub-profile not found.");
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -28,17 +42,16 @@ export default function ChatPage() {
   }, [subProfileId]);
 
   async function handleSend() {
-    if (!input.trim()) return;
+    if (!input.trim() || !subProfileId || !subProfile) return;
+    const profileType = subProfile.profileType?.toLowerCase();
+    if (!profileType) {
+      setError("Invalid profile type.");
+      return;
+    }
+
     try {
-      const profileType = subProfile?.profileType?.toLowerCase();
-
-      if (!profileType) {
-        console.error("Missing profileType, cannot send chat.");
-        return;
-      }
-
       const response = await sendChatMessage({
-        subProfileId: subProfileId!,
+        subProfileId,
         message: input,
         profileType,
       });
@@ -49,10 +62,36 @@ export default function ChatPage() {
         { role: "agent", content: response },
       ]);
       setInput("");
-    } catch (err) {
-      console.error("Message failed", err);
+      setError("");
+    } catch {
+      setError("Failed to send message. Try again.");
     }
   }
+
+  function isCandidate(
+    profile: SubProfile | null
+  ): profile is CandidateProfileData {
+    return profile?.profileType === "Candidate";
+  }
+
+  function isCompany(
+    profile: SubProfile | null
+  ): profile is CompanyProfileData {
+    return profile?.profileType === "Company";
+  }
+
+  if (loading)
+    return (
+      <AppLayout>
+        <p>Loading profile...</p>
+      </AppLayout>
+    );
+  if (error && !subProfile)
+    return (
+      <AppLayout>
+        <p>{error}</p>
+      </AppLayout>
+    );
 
   return (
     <AppLayout>
@@ -60,25 +99,35 @@ export default function ChatPage() {
         {/* LEFT: Sidebar with profile info */}
         <div className="md:w-1/3 w-full space-y-4">
           <div className="bg-white rounded shadow p-4 text-center">
-            <img
-              src={subProfile?.avatarUrl || "/default-avatar.png"}
-              alt="Avatar"
-              className="w-32 h-32 rounded-full object-cover mx-auto mb-2"
-            />
+            {isCandidate(subProfile) && (
+              <img
+                src={subProfile.avatarUrl || "/default-avatar.png"}
+                alt="Avatar"
+                className="w-32 h-32 rounded-full object-cover mx-auto mb-2"
+              />
+            )}
+
             <h2 className="text-lg font-semibold">
-              {subProfile?.firstName} {subProfile?.lastName}
+              {isCandidate(subProfile) &&
+                `${subProfile.firstName} ${subProfile.lastName}`}
+              {isCompany(subProfile) && subProfile.name}
             </h2>
+
             <p className="text-sm text-gray-600">{subProfile?.description}</p>
           </div>
 
           {isOwner ? (
             <div className="bg-white rounded shadow p-4 space-y-2">
-              <Button
-                onClick={() => navigate(`/edit-sub-profile/${subProfile.id}`)}
-                variant="outline"
-              >
-                Edit Profile
-              </Button>
+              {
+                <Button
+                  onClick={() =>
+                    navigate(`/edit-sub-profile/${(subProfile as any).id}`)
+                  }
+                  variant="outline"
+                >
+                  Edit Profile
+                </Button>
+              }
               <Button onClick={() => {}} variant="outline">
                 Create Token
               </Button>
@@ -121,6 +170,8 @@ export default function ChatPage() {
             />
             <Button onClick={handleSend}>Send</Button>
           </div>
+
+          {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
         </div>
       </div>
     </AppLayout>
