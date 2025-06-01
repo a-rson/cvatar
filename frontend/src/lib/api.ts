@@ -19,7 +19,10 @@ export async function register(data: AuthCredentials): Promise<string> {
 }
 
 export async function getMe() {
-  const res = await axios.get("/me");
+  const token = localStorage.getItem("token");
+  const res = await axios.get("/me", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   return res.data;
 }
 
