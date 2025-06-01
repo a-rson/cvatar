@@ -1,83 +1,77 @@
 import { FastifyInstance } from "fastify";
-import { prisma } from "../lib";
+import { prisma, logger } from "../lib";
 import { verifyJWT, requireProvider } from "../middleware";
+import { companyProfileSchema } from "../schema";
 
 export async function companyProfileRoutes(server: FastifyInstance) {
   server.post(
     "/company-profile",
     { preHandler: [verifyJWT, requireProvider] },
     async (request, reply) => {
-      const user = request.user;
-
-      if (!user) {
-        return reply.status(500).send({ error: "Internal server error" });
+      const user = request.user!;
+      const parsed = companyProfileSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: "Invalid input",
+          details: parsed.error.flatten(),
+        });
       }
 
       const {
+        name,
         companyName,
         description,
         logoUrl,
         services = [],
-        techStack = [],
+        techStack = { languages: [], frameworks: [], tools: [] },
         teamSize,
         contactEmail,
         contactPhone,
-      } = request.body as any;
-
-      const existingProfile = await prisma.profile.findFirst({
-        where: { userId: user.id },
-        include: {
-          company: true,
-          candidate: true,
-        },
-      });
-
-      if (existingProfile?.company) {
-        return reply
-          .status(400)
-          .send({ error: "Company profile already exists." });
-      }
-
-      if (existingProfile?.candidate) {
-        return reply.status(400).send({
-          error: "Cannot create company profile when candidate profile exists.",
-        });
-      }
+      } = parsed.data;
 
       try {
-        const createdProfile = await prisma.profile.create({
+        const profile = await prisma.profile.upsert({
+          where: { userId: user.id },
+          update: {},
+          create: { user: { connect: { id: user.id } } },
+        });
+
+        const createdCompany = await prisma.companyProfile.create({
           data: {
-            user: { connect: { id: user.id } },
-            company: {
-              create: {
-                companyName,
-                description,
-                logoUrl,
-                services,
-                techStack: {
-                  create: techStack.map((name: string) => ({
-                    category: "tool",
-                    name,
-                  })),
-                },
-                teamSize,
-                contactEmail,
-                contactPhone,
-              },
+            profileId: profile.id,
+            name,
+            companyName,
+            description,
+            logoUrl,
+            services,
+            teamSize,
+            contactEmail,
+            contactPhone,
+            techStack: {
+              create: [
+                ...techStack.languages.map((name) => ({
+                  category: "language",
+                  name,
+                })),
+                ...techStack.frameworks.map((name) => ({
+                  category: "framework",
+                  name,
+                })),
+                ...techStack.tools.map((name) => ({
+                  category: "tool",
+                  name,
+                })),
+              ],
             },
           },
           include: {
-            company: {
-              include: {
-                techStack: true,
-              },
-            },
+            techStack: true,
           },
         });
 
-        reply.code(201).send(createdProfile);
+        reply.code(201).send(createdCompany);
       } catch (error) {
-        console.error("Company profile creation failed:", error);
+        logger.error("Company profile creation failed:", error);
         reply.code(500).send({ error: "Failed to create company profile." });
       }
     }

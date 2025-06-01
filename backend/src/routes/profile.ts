@@ -1,90 +1,42 @@
 import { FastifyInstance } from "fastify";
 import { prisma, logger } from "../lib";
-import { verifyJWT, requireProvider } from "../middleware";
+import { verifyJWT } from "../middleware";
 
 export async function profileRoutes(server: FastifyInstance) {
   server.get(
     "/profile/:id",
-    { preHandler: [verifyJWT.optional] },
+    { preHandler: [verifyJWT] },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const user = request.user; // may be undefined
-      const tokenValue = request.headers["authorization-token"] as
-        | string
-        | undefined;
+      const user = request.user!;
 
       const profile = await prisma.profile.findUnique({
         where: { id },
         include: {
-          candidate: {
-            include: { workExperience: true, techStack: true, documents: true },
-          },
-          company: { include: { techStack: true } },
-          botPersona: true,
+          candidateProfiles: true,
+          companyProfiles: true,
         },
       });
 
       if (!profile)
         return reply.status(404).send({ error: "Profile not found." });
 
-      // Case 1: Admin
-      if (user?.type === "admin") return reply.send(profile);
-
-      // Case 2: Owner
-      if (user && profile.userId === user.id) return reply.send(profile);
-
-      // Case 3: Token
-      if (tokenValue) {
-        const token = await prisma.token.findUnique({
-          where: { token: tokenValue },
-          include: { profile: true },
-        });
-
-        if (token && token.profileId === id && !token.used) {
-          const now = new Date();
-          if (token.expiresAt && token.expiresAt < now) {
-            return reply.status(403).send({ error: "Token has expired." });
-          }
-          // Optionally: mark token as used if it's one-time
-          if (token.type === "one-time") {
-            await prisma.token.update({
-              where: { id: token.id },
-              data: { used: true },
-            });
-          }
-
-          await prisma.tokenAccessLog.create({
-            data: {
-              tokenId: token.id,
-              userId: user?.id,
-              profileId: id,
-            },
-          });
-
-          return reply.send(profile);
-        }
+      if (profile.userId !== user.id && user.type !== "admin") {
+        return reply
+          .status(403)
+          .send({ error: "Forbidden: not your profile." });
       }
 
-      return reply
-        .status(403)
-        .send({ error: "Access denied. Valid token or ownership required." });
+      return reply.send(profile);
     }
   );
 
-  // DELETE /profile/:id
   server.delete(
     "/profile/:id",
     { preHandler: [verifyJWT] },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const user = request.user;
-
-      if (!user) {
-        logger.error(
-          "JWT verified but request.user is undefined — should not happen."
-        );
-        return reply.status(500).send({ error: "Internal server error." });
-      }
+      const user = request.user!;
 
       const profile = await prisma.profile.findUnique({ where: { id } });
 
@@ -99,7 +51,7 @@ export async function profileRoutes(server: FastifyInstance) {
 
       await prisma.profile.delete({ where: { id } });
 
-      reply.send({ message: "Profile deleted." });
+      return reply.send({ message: "Profile deleted." });
     }
   );
 }
