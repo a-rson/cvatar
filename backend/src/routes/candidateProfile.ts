@@ -61,6 +61,7 @@ export async function candidateProfileRoutes(server: FastifyInstance) {
           .pop()}`;
         const fs = await import("fs/promises");
         const path = `./public/uploads/${fileName}`;
+        await fs.mkdir("./public/uploads", { recursive: true });
         await fs.writeFile(path, avatarBuffer);
         avatarUrl = `/uploads/${fileName}`;
       }
